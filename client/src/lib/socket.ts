@@ -21,6 +21,20 @@ socket.on("connect", () => {
   console.log("Connected status:", socket.connected);
 });
 
+// Join room function
+export const joinRoom = (room: string) => {
+  console.log("Attempting to join room:", room);
+  socket.emit("join", { room });
+};
+
+// Room event handlers
+socket.on("userJoined", (data) => {
+  console.log("User joined event received:", data);
+  console.log("User ID:", data.userId);
+  console.log("Room:", data.room);
+  console.log("Timestamp:", data.timestamp);
+});
+
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
   console.log("Connected status:", socket.connected);
@@ -37,3 +51,4 @@ socket.on("error", (error) => {
 
 // Export a function to get the socket instance
 export const getSocket = () => socket;
+

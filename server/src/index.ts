@@ -44,6 +44,31 @@ io.on("connection", (socket: Socket) => {
   console.log("Total connected clients:", io.engine.clientsCount);
   console.log("Client transport:", socket.conn.transport.name);
 
+  // Handle join room event
+  socket.on("join", (data) => {
+    console.log("Client attempting to join room:", data.room);
+    console.log("Current socket rooms:", socket.rooms);
+    
+    socket.join(data.room);
+    
+    // Emit to all clients in the room except the sender
+    socket.to(data.room).emit("userJoined", { 
+      userId: socket.id,
+      room: data.room,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Also emit to the sender to confirm they joined
+    socket.emit("userJoined", { 
+      userId: socket.id,
+      room: data.room,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log("User joined room:", data.room);
+    console.log("Updated socket rooms:", socket.rooms);
+  });
+
   // Handle disconnection
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
