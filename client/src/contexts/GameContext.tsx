@@ -6,8 +6,9 @@ import React, {
   createContext,
 } from "react";
 import { GameHandler } from "../events/GameHandler";
+import { useNavigate } from "react-router-dom";
 
-interface GameState {
+export interface GameState {
   gameId: string | null;
   timestamp: string | null;
 }
@@ -16,49 +17,44 @@ interface GameContextType {
   state: GameState;
   createGame: () => void;
   joinGame: (gameId: string) => void;
+  isReady: boolean;
 }
 
-const GameContext = createContext<GameContextType | null>(null);
+export const GameContext = createContext<GameContextType | null>(null);
 
-export function GameProvider({ children }: { children: React.ReactNode }) {
+export default function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>({
     gameId: null,
     timestamp: null,
   });
+  const [isReady, setIsReady] = useState(false);
 
-  // Use useRef to maintain a single instance of the game handler
-  const gameHandlerRef = useRef<GameHandler | null>(null);
-  const isInitializedRef = useRef(false);
+  // Single instance of game handler
+  const gameHandler = useRef<GameHandler | null>(null);
 
+  // Initialize game handler once
   useEffect(() => {
-    // Initialize game handler only once, even in strict mode
-    if (!isInitializedRef.current) {
-      gameHandlerRef.current = new GameHandler(setState);
-      isInitializedRef.current = true;
-    }
+    // Create handler immediately
+    gameHandler.current = new GameHandler(setState);
+    setIsReady(true);
 
-    // Cleanup on unmount
     return () => {
-      if (gameHandlerRef.current) {
-        gameHandlerRef.current.cleanup();
-        gameHandlerRef.current = null;
-        isInitializedRef.current = false;
+      if (gameHandler.current) {
+        gameHandler.current.cleanup();
+        gameHandler.current = null;
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
-
-  // Create stable handler functions with useCallback
-  const createGame = useCallback(() => {
-    if (gameHandlerRef.current) {
-      gameHandlerRef.current.createGame();
-    }
   }, []);
+
+  const createGame = useCallback(() => {
+    if (!isReady || !gameHandler.current) return;
+    gameHandler.current.createGame();
+  }, [isReady]);
 
   const joinGame = useCallback((gameId: string) => {
-    if (gameHandlerRef.current) {
-      gameHandlerRef.current.joinGame(gameId);
-    }
-  }, []);
+    if (!isReady || !gameHandler.current) return;
+    gameHandler.current.joinGame(gameId);
+  }, [isReady]);
 
   return (
     <GameContext.Provider
@@ -66,6 +62,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         state,
         createGame,
         joinGame,
+        isReady,
       }}
     >
       {children}
