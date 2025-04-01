@@ -17,7 +17,7 @@ const io = new Server(httpServer, {
     allowedHeaders: ["*"],
   },
   path: "/socket.io/",
-  transports: ["polling", "websocket"],
+  transports: ["websocket", "polling"],
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -48,23 +48,23 @@ io.on("connection", (socket: Socket) => {
   socket.on("join", (data) => {
     console.log("Client attempting to join room:", data.room);
     console.log("Current socket rooms:", socket.rooms);
-    
+
     socket.join(data.room);
-    
+
     // Emit to all clients in the room except the sender
-    socket.to(data.room).emit("userJoined", { 
+    socket.to(data.room).emit("userJoined", {
       userId: socket.id,
       room: data.room,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     // Also emit to the sender to confirm they joined
-    socket.emit("userJoined", { 
+    socket.emit("userJoined", {
       userId: socket.id,
       room: data.room,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     console.log("User joined room:", data.room);
     console.log("Updated socket rooms:", socket.rooms);
   });

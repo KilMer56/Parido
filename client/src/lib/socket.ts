@@ -9,7 +9,7 @@ export const socket = io(SOCKET_URL, {
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   path: "/socket.io/",
-  transports: ["polling", "websocket"],
+  transports: ["websocket", "polling"],
   withCredentials: true,
   timeout: 60000,
 });
@@ -30,9 +30,6 @@ export const joinRoom = (room: string) => {
 // Room event handlers
 socket.on("userJoined", (data) => {
   console.log("User joined event received:", data);
-  console.log("User ID:", data.userId);
-  console.log("Room:", data.room);
-  console.log("Timestamp:", data.timestamp);
 });
 
 socket.on("disconnect", () => {
