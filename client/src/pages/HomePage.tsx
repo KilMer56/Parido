@@ -22,18 +22,27 @@ function HomeContent() {
   };
 
   return (
-    <div>
-      <h1>Parido Game</h1>
-      <button onClick={createGame}>Create Game</button>
-      <form onSubmit={handleJoinGame} style={{ marginTop: "1rem" }}>
+    <div className="container">
+      <h1>Parido</h1>
+      <p className="description">
+        A fast-paced multiplayer game where players compete in real-time. 
+        Create a new game or join an existing one to start playing!
+      </p>
+      <button className="create-game" onClick={createGame}>
+          Create Game
+        </button>
+      <form onSubmit={handleJoinGame} className="join-form">
         <input
+          id="join-game-input"
           type="text"
           value={gameId}
           onChange={(e) => setGameId(e.target.value)}
           placeholder="Enter game ID"
-          style={{ marginRight: "0.5rem" }}
+          className="join-input"
         />
-        <button type="submit">Join Game</button>
+        <button type="submit" className="submit-game">
+          Join Game
+        </button>
       </form>
     </div>
   );

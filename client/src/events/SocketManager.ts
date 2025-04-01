@@ -1,5 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import Logger from "../utils/logger";
+import { NotificationContextType } from "../contexts/NotificationContext";
 
 export interface SocketEvent {
   name: string;
@@ -12,6 +13,7 @@ export class SocketManager {
   private registeredEvents: Map<string, SocketEvent[]> = new Map();
   private isConnected: boolean = false;
   private pendingEvents: SocketEvent[] = [];
+  private notificationContext: NotificationContextType | null = null;
 
   private constructor() {
     const SOCKET_URL =
@@ -55,6 +57,18 @@ export class SocketManager {
     }
     return SocketManager.instance;
   }
+  public setNotificationContext(context: NotificationContextType): void {
+    this.notificationContext = context;
+  }
+
+  private showNotification(
+    message: string,
+    type: "error" | "success" | "info"
+  ): void {
+    if (this.notificationContext) {
+      this.notificationContext.addNotification(message, type);
+    }
+  }
 
   private setupBasicEvents(): void {
     const basicEvents: SocketEvent[] = [
@@ -64,6 +78,7 @@ export class SocketManager {
           Logger.info("Connected to server:", socket.id);
           Logger.info("Transport:", socket.io.engine.transport.name);
           this.isConnected = true;
+          this.showNotification("Connected to server", "success");
           // Register any pending events when connection is established
           if (this.pendingEvents.length > 0) {
             Logger.info("Registering pending events after connection");
@@ -77,6 +92,7 @@ export class SocketManager {
         handler: () => {
           Logger.info("Disconnected from server");
           this.isConnected = false;
+          this.showNotification("Disconnected from server", "error");
         },
       },
       {
@@ -84,6 +100,7 @@ export class SocketManager {
         handler: (_socket, error) => {
           console.error("Connection error:", error);
           this.isConnected = false;
+          this.showNotification("Connection error", "error");
         },
       },
       {
@@ -91,6 +108,7 @@ export class SocketManager {
         handler: (_socket, error) => {
           console.error("Socket error:", error);
           this.isConnected = false;
+          this.showNotification("Socket error", "error");
         },
       },
     ];
@@ -113,7 +131,7 @@ export class SocketManager {
     events.forEach((event) => {
       // Remove any existing listeners for this event
       this.socket.off(event.name);
-      
+
       // Add the new listener
       this.socket.on(event.name, (...args) =>
         event.handler(this.socket, ...args)
@@ -137,7 +155,7 @@ export class SocketManager {
       // Remove the event from our tracking
       const registeredEvents = this.registeredEvents.get(event.name);
       if (registeredEvents) {
-        const index = registeredEvents.findIndex(e => e === event);
+        const index = registeredEvents.findIndex((e) => e === event);
         if (index !== -1) {
           registeredEvents.splice(index, 1);
         }
