@@ -1,11 +1,12 @@
-import { Player } from "./Player";
+import { randomId } from "../utils/random";
+import { Player } from "./player";
 
 export class Game {
   private id: string;
   private players: Player[];
 
   constructor() {
-    this.id = Math.random().toString(36).substring(2, 8);
+    this.id = randomId();
     this.players = [];
   }
 

@@ -1,11 +1,14 @@
+import { randomId } from "../utils/random";
+
 export class Player {
   private id: string;
 
-  constructor(id: string) {
-    this.id = id;
+  constructor() {
+    this.id = randomId();
   }
 
   public getId(): string {
     return this.id;
   }
 }
+

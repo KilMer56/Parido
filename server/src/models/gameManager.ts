@@ -1,6 +1,7 @@
-import { Game } from "./Game";
+import { Game } from "./game";
+import { Player } from "./player";
 
-export class GameManager {
+class GameManager {
   private static instance: GameManager;
   private gamesByGameId: Map<string, Game>;
 
@@ -32,5 +33,18 @@ export class GameManager {
   public getAllGames(): Map<string, Game> {
     return this.gamesByGameId;
   }
+
+  public addPlayerToGame(gameId: string): boolean {
+    const game = this.getGame(gameId);
+
+    if (game) {
+      const player = new Player();
+      game.addPlayer(player);
+      return true;
+    }
+    return false;
+  }
 }
+
+export const gameManager = GameManager.getInstance();
 
