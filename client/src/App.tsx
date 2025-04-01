@@ -1,29 +1,23 @@
-import { useEffect } from "react";
-import { createGame, socket } from "./lib/socket";
+import { GameProvider, useGame } from "./contexts/GameContext";
 import "./App.css";
 
-function App() {
-  useEffect(() => {
-    // Connect to the socket server
-    socket.connect();
-
-    // Cleanup on unmount
-    return () => {
-      socket.disconnect();
-    };
-  });
+function Game() {
+  const { state: gameState, createGame } = useGame();
 
   return (
     <div>
       <h1>Parido Game</h1>
-      <button
-        onClick={() => {
-          createGame();
-        }}
-      >
-        Create Game
-      </button>
+      {gameState.gameId && <p>Current game: #{gameState.gameId}</p>}
+      <button onClick={createGame}>Create Game</button>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <GameProvider>
+      <Game />
+    </GameProvider>
   );
 }
 
