@@ -1,23 +1,28 @@
 import { Socket } from "socket.io";
 import { gameManager } from "../models/gameManager";
 import Logger from "../utils/logger";
-import { EventHandler } from "./basicHandler";
+import { BaseEventHandler, SocketEvent } from "./basicHandler";
 
-export const gameHandler: EventHandler = {
-  registerEvents: (socket: Socket) => {
-    socket.on("createGame", () => {
-      Logger.info("Client creating game");
+class GameHandler extends BaseEventHandler {
+  protected events: SocketEvent[] = [
+    {
+      name: "createGame",
+      handler: (socket: Socket) => {
+        Logger.info("Client creating game");
 
-      const game = gameManager.createGame();
-      socket.join(game.getId());
+        const game = gameManager.createGame();
+        socket.join(game.getId());
 
-      socket.emit("gameCreated", {
-        gameId: game.getId(),
-        timestamp: new Date().toISOString(),
-      });
+        socket.emit("gameCreated", {
+          gameId: game.getId(),
+          timestamp: new Date().toISOString(),
+        });
 
-      Logger.info("Game created:", game.getId());
-    });
-  },
-};
+        Logger.info("Game created:", game.getId());
+      },
+    },
+  ];
+}
+
+export const gameHandler = new GameHandler();
 

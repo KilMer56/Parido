@@ -5,31 +5,55 @@ export interface EventHandler {
   registerEvents(socket: Socket): void;
 }
 
-export const basicHandler: EventHandler = {
-  registerEvents: (socket: Socket) => {
-    // Handle disconnection
-    socket.on("disconnect", () => {
-      Logger.info("Client disconnected:", socket.id);
-    });
+export interface SocketEvent {
+  name: string;
+  handler: (socket: Socket, ...args: any[]) => void;
+}
 
-    // Handle errors
-    socket.on("error", (error) => {
-      Logger.error("Socket error:", error);
-    });
+export class BaseEventHandler implements EventHandler {
+  protected events: SocketEvent[] = [];
 
-    // Handle connection errors
-    socket.on("connect_error", (error) => {
-      Logger.error("Connection error:", error);
+  public registerEvents(socket: Socket): void {
+    this.events.forEach((event) => {
+      socket.on(event.name, (...args) => event.handler(socket, ...args));
     });
+  }
+}
 
-    // Handle ping and pong events
-    socket.on("ping", () => {
-      Logger.debug("Ping received from client:", socket.id);
-    });
+class BasicHandler extends BaseEventHandler {
+  protected events: SocketEvent[] = [
+    {
+      name: "disconnect",
+      handler: (socket: Socket) => {
+        Logger.info("Client disconnected:", socket.id);
+      },
+    },
+    {
+      name: "error",
+      handler: (_socket: Socket, error: Error) => {
+        Logger.error("Socket error:", error);
+      },
+    },
+    {
+      name: "connect_error",
+      handler: (_socket: Socket, error: Error) => {
+        Logger.error("Connection error:", error);
+      },
+    },
+    {
+      name: "ping",
+      handler: (socket: Socket) => {
+        Logger.debug("Ping received from client:", socket.id);
+      },
+    },
+    {
+      name: "pong",
+      handler: (socket: Socket) => {
+        Logger.debug("Pong received from client:", socket.id);
+      },
+    },
+  ];
+}
 
-    socket.on("pong", () => {
-      Logger.debug("Pong received from client:", socket.id);
-    });
-  },
-};
+export const basicHandler = new BasicHandler();
 

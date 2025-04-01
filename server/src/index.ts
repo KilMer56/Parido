@@ -1,67 +1,82 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import Logger from "./utils/logger";
-import { basicHandler, EventHandler } from "./events/basicHandler";
+import { EventHandler } from "./events/basicHandler";
+import { basicHandler } from "./events/basicHandler";
 import { gameHandler } from "./events/gameHandler";
+import { Config } from "./config";
 
-// Load environment variables
-dotenv.config();
+class GameServer {
+  private app: express.Application;
+  private httpServer: ReturnType<typeof createServer>;
+  private io: Server;
+  private config: Config;
+  private handlers: EventHandler[];
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["*"],
-  },
-  path: "/socket.io/",
-  transports: ["websocket", "polling"],
-  pingTimeout: 60000,
-  pingInterval: 25000,
-});
+  constructor() {
+    // Initialize configuration
+    this.config = new Config();
 
-const port = process.env.PORT || 3001;
+    // Initialize Express
+    this.app = express();
+    this.httpServer = createServer(this.app);
 
-// Middleware
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  })
-);
-app.use(express.json());
+    // Initialize Socket.IO
+    this.io = new Server(this.httpServer, {
+      cors: this.config.getCorsConfig(),
+      path: "/socket.io/",
+      transports: ["websocket", "polling"],
+      pingTimeout: 60000,
+      pingInterval: 25000,
+    });
 
-// Basic health check endpoint
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
-});
+    // Initialize handlers
+    this.handlers = [basicHandler, gameHandler];
 
-// Event handlers
-const handlers: EventHandler[] = [basicHandler, gameHandler];
+    // Setup middleware and routes
+    this.setupMiddleware();
+    this.setupRoutes();
+    this.setupSocketHandlers();
+  }
 
-// Socket.IO connection handling
-io.on("connection", (socket: Socket) => {
-  Logger.info("New client connected:", socket.id);
-  Logger.info("Total connected clients:", io.engine.clientsCount);
-  Logger.info("Client transport:", socket.conn.transport.name);
+  private setupMiddleware(): void {
+    this.app.use(cors(this.config.getCorsConfig()));
+    this.app.use(express.json());
+  }
 
-  // Register event handlers
-  handlers.forEach((handler) => {
-    handler.registerEvents(socket);
-  });
-});
+  private setupRoutes(): void {
+    this.app.get("/health", (_req: Request, res: Response) => {
+      res.json({ status: "ok" });
+    });
+  }
 
-// Start server
-httpServer.listen(port, () => {
-  Logger.info(`Server is running on port ${port}`);
-  Logger.info(`Socket.IO server is ready to accept connections`);
-  Logger.info(
-    `CORS origin set to: ${process.env.CLIENT_URL || "http://localhost:5173"}`
-  );
-});
+  private setupSocketHandlers(): void {
+    this.io.on("connection", (socket: Socket) => {
+      Logger.info("New client connected:", socket.id);
+      Logger.info("Total connected clients:", this.io.engine.clientsCount);
+      Logger.info("Client transport:", socket.conn.transport.name);
+
+      // Register event handlers
+      this.handlers.forEach((handler) => {
+        handler.registerEvents(socket);
+      });
+    });
+  }
+
+  public start(): void {
+    const port = this.config.getPort();
+
+    this.httpServer.listen(port, () => {
+      Logger.info(`Server is running on port ${port}`);
+      Logger.info(`Socket.IO server is ready to accept connections`);
+      Logger.info(`CORS origin set to: ${this.config.getClientUrl()}`);
+    });
+  }
+}
+
+// Create and start the server
+const server = new GameServer();
+server.start();
 
