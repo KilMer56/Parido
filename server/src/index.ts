@@ -3,8 +3,8 @@ import cors from "cors";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import Logger from "./utils/logger";
-import { EventHandler } from "./events/basicHandler";
-import { basicHandler } from "./events/basicHandler";
+import { EventHandler } from "./events/BasicHandler";
+import { basicHandler } from "./events/BasicHandler";
 import { gameHandler } from "./events/gameHandler";
 import { Config } from "./config";
 

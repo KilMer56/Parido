@@ -1,5 +1,5 @@
-import { Game } from "./game";
-import { Player } from "./player";
+import { Game } from "./Game";
+import { Player } from "./Player";
 
 class GameManager {
   private static instance: GameManager;

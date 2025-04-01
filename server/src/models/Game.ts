@@ -1,5 +1,5 @@
 import { randomId } from "../utils/random";
-import { Player } from "./player";
+import { Player } from "./Player";
 
 export class Game {
   private id: string;
