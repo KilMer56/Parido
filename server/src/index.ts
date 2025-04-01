@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
+import { GameManager } from "./game/GameManager";
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +24,7 @@ const io = new Server(httpServer, {
 });
 
 const port = process.env.PORT || 3001;
+const gameManager = GameManager.getInstance();
 
 // Middleware
 app.use(
@@ -34,7 +36,7 @@ app.use(
 app.use(express.json());
 
 // Basic health check endpoint
-app.get("/health", (req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
@@ -44,29 +46,18 @@ io.on("connection", (socket: Socket) => {
   console.log("Total connected clients:", io.engine.clientsCount);
   console.log("Client transport:", socket.conn.transport.name);
 
-  // Handle join room event
-  socket.on("join", (data) => {
-    console.log("Client attempting to join room:", data.room);
-    console.log("Current socket rooms:", socket.rooms);
+  socket.on("createGame", () => {
+    console.log("Client creating game");
 
-    socket.join(data.room);
+    const game = gameManager.createGame();
+    socket.join(game.getId());
 
-    // Emit to all clients in the room except the sender
-    socket.to(data.room).emit("userJoined", {
-      userId: socket.id,
-      room: data.room,
+    socket.emit("gameCreated", {
+      gameId: game.getId(),
       timestamp: new Date().toISOString(),
     });
 
-    // Also emit to the sender to confirm they joined
-    socket.emit("userJoined", {
-      userId: socket.id,
-      room: data.room,
-      timestamp: new Date().toISOString(),
-    });
-
-    console.log("User joined room:", data.room);
-    console.log("Updated socket rooms:", socket.rooms);
+    console.log("Game created:", game.getId());
   });
 
   // Handle disconnection

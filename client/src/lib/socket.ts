@@ -21,15 +21,14 @@ socket.on("connect", () => {
   console.log("Connected status:", socket.connected);
 });
 
-// Join room function
-export const joinRoom = (room: string) => {
-  console.log("Attempting to join room:", room);
-  socket.emit("join", { room });
+// Game functions
+export const createGame = () => {
+  socket.emit("createGame");
 };
 
-// Room event handlers
-socket.on("userJoined", (data) => {
-  console.log("User joined event received:", data);
+// Game Handlers
+socket.on("gameCreated", (game) => {
+  console.log("Game created:", game);
 });
 
 socket.on("disconnect", () => {

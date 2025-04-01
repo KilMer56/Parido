@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { socket } from "./lib/socket";
+import { createGame, socket } from "./lib/socket";
 import "./App.css";
 
 function App() {
@@ -18,10 +18,10 @@ function App() {
       <h1>Parido Game</h1>
       <button
         onClick={() => {
-          socket.emit("join", { room: "test" });
+          createGame();
         }}
       >
-        Join Room
+        Create Game
       </button>
     </div>
   );
