@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { gameManager } from "../models/gameManager";
+import { gameManager } from "../models/GameManager";
 import Logger from "../utils/logger";
 import { BaseEventHandler, SocketEvent } from "./BasicHandler";
 import { getCurrentDatetime } from "../utils/date";

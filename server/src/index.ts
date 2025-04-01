@@ -5,7 +5,7 @@ import { Server, Socket } from "socket.io";
 import Logger from "./utils/logger";
 import { EventHandler } from "./events/BasicHandler";
 import { basicHandler } from "./events/BasicHandler";
-import { gameHandler } from "./events/gameHandler";
+import { gameHandler } from "./events/GameHandler";
 import { Config } from "./config";
 
 class GameServer {
