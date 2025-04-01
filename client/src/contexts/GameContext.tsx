@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  createContext,
+} from "react";
 import { GameHandler } from "../events/GameHandler";
 
 interface GameState {
@@ -20,15 +26,46 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     timestamp: null,
   });
 
-  // Initialize game handler
-  const gameHandler = new GameHandler(setState);
+  // Use useRef to maintain a single instance of the game handler
+  const gameHandlerRef = useRef<GameHandler | null>(null);
+  const isInitializedRef = useRef(false);
+
+  useEffect(() => {
+    // Initialize game handler only once, even in strict mode
+    if (!isInitializedRef.current) {
+      gameHandlerRef.current = new GameHandler(setState);
+      isInitializedRef.current = true;
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (gameHandlerRef.current) {
+        gameHandlerRef.current.cleanup();
+        gameHandlerRef.current = null;
+        isInitializedRef.current = false;
+      }
+    };
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Create stable handler functions with useCallback
+  const createGame = useCallback(() => {
+    if (gameHandlerRef.current) {
+      gameHandlerRef.current.createGame();
+    }
+  }, []);
+
+  const joinGame = useCallback((gameId: string) => {
+    if (gameHandlerRef.current) {
+      gameHandlerRef.current.joinGame(gameId);
+    }
+  }, []);
 
   return (
     <GameContext.Provider
       value={{
         state,
-        createGame: gameHandler.createGame.bind(gameHandler),
-        joinGame: gameHandler.joinGame.bind(gameHandler),
+        createGame,
+        joinGame,
       }}
     >
       {children}
@@ -37,7 +74,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useGame() {
-  const context = useContext(GameContext);
+  const context = React.useContext(GameContext);
   if (!context) {
     throw new Error("useGame must be used within a GameProvider");
   }

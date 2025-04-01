@@ -9,7 +9,7 @@ export interface SocketEvent {
 export class SocketManager {
   private static instance: SocketManager;
   private socket: Socket;
-  public events: SocketEvent[] = [];
+  private registeredEvents: Map<string, SocketEvent[]> = new Map();
   private isConnected: boolean = false;
   private pendingEvents: SocketEvent[] = [];
 
@@ -109,12 +109,22 @@ export class SocketManager {
       this.pendingEvents.push(...events);
       return;
     }
+
     events.forEach((event) => {
+      // Remove any existing listeners for this event
+      this.socket.off(event.name);
+      
+      // Add the new listener
       this.socket.on(event.name, (...args) =>
         event.handler(this.socket, ...args)
       );
+
+      // Track the registered event
+      if (!this.registeredEvents.has(event.name)) {
+        this.registeredEvents.set(event.name, []);
+      }
+      this.registeredEvents.get(event.name)?.push(event);
     });
-    this.events.push(...events);
   }
 
   public unregisterEvents(events: SocketEvent[]): void {
@@ -122,12 +132,23 @@ export class SocketManager {
       "Unregistering events:",
       events.map((e) => e.name)
     );
+
     events.forEach((event) => {
-      this.socket.off(event.name);
+      // Remove the event from our tracking
+      const registeredEvents = this.registeredEvents.get(event.name);
+      if (registeredEvents) {
+        const index = registeredEvents.findIndex(e => e === event);
+        if (index !== -1) {
+          registeredEvents.splice(index, 1);
+        }
+      }
+
+      // If no more events for this name, remove the socket listener
+      if (!this.registeredEvents.get(event.name)?.length) {
+        this.socket.off(event.name);
+        this.registeredEvents.delete(event.name);
+      }
     });
-    this.events = this.events.filter(
-      (e) => !events.some((event) => event.name === e.name)
-    );
   }
 
   public emit(event: string, ...args: unknown[]): void {

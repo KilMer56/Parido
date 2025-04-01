@@ -1,5 +1,5 @@
-import { GameProvider, useGame } from "./contexts/GameContext";
 import "./App.css";
+import { GameProvider, useGame } from "./contexts/GameContext";
 
 function Game() {
   const { state: gameState, createGame } = useGame();
