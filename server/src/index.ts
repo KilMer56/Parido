@@ -3,7 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import { GameManager } from "./game/GameManager";
+import Logger from "./utils/logger";
+import { basicHandler, EventHandler } from "./events/basicHandler";
+import { gameHandler } from "./events/gameHandler";
 
 // Load environment variables
 dotenv.config();
@@ -24,7 +26,6 @@ const io = new Server(httpServer, {
 });
 
 const port = process.env.PORT || 3001;
-const gameManager = GameManager.getInstance();
 
 // Middleware
 app.use(
@@ -40,43 +41,26 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
+// Event handlers
+const handlers: EventHandler[] = [basicHandler, gameHandler];
+
 // Socket.IO connection handling
 io.on("connection", (socket: Socket) => {
-  console.log("New client connected:", socket.id);
-  console.log("Total connected clients:", io.engine.clientsCount);
-  console.log("Client transport:", socket.conn.transport.name);
+  Logger.info("New client connected:", socket.id);
+  Logger.info("Total connected clients:", io.engine.clientsCount);
+  Logger.info("Client transport:", socket.conn.transport.name);
 
-  socket.on("createGame", () => {
-    console.log("Client creating game");
-
-    const game = gameManager.createGame();
-    socket.join(game.getId());
-
-    socket.emit("gameCreated", {
-      gameId: game.getId(),
-      timestamp: new Date().toISOString(),
-    });
-
-    console.log("Game created:", game.getId());
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-    console.log("Remaining connected clients:", io.engine.clientsCount);
-  });
-
-  // Handle errors
-  socket.on("error", (error) => {
-    console.error("Socket error:", error);
+  // Register event handlers
+  handlers.forEach((handler) => {
+    handler.registerEvents(socket);
   });
 });
 
 // Start server
 httpServer.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-  console.log(`Socket.IO server is ready to accept connections`);
-  console.log(
+  Logger.info(`Server is running on port ${port}`);
+  Logger.info(`Socket.IO server is ready to accept connections`);
+  Logger.info(
     `CORS origin set to: ${process.env.CLIENT_URL || "http://localhost:5173"}`
   );
 });
