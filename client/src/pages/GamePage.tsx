@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useGame } from "../contexts/GameContext";
-import GameProvider from "../contexts/GameContext";
+import { useGame, GameProvider } from "../contexts/GameContext";
 
 function GameContent() {
   const { state: gameState, joinGame } = useGame();
@@ -28,4 +27,5 @@ export function GamePage() {
       <GameContent />
     </GameProvider>
   );
-} 
+}
+

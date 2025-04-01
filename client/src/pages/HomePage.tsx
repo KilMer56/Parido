@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGame } from "../contexts/GameContext";
-import GameProvider from "../contexts/GameContext";
+import { useGame, GameProvider } from "../contexts/GameContext";
 
 function HomeContent() {
   const { createGame, state } = useGame();
@@ -13,7 +12,6 @@ function HomeContent() {
       navigate(`/${state.gameId}`);
     }
   }, [state.gameId, navigate]);
-
 
   const handleJoinGame = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,4 +45,4 @@ export function HomePage() {
       <HomeContent />
     </GameProvider>
   );
-} 
+}
