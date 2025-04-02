@@ -1,5 +1,5 @@
 export type GameAction = {
-  type: "create" | "join" | "start" | "leave" | "placeBid";
+  type: "create" | "join" | "start" | "leave" | "bid" | "challenge";
   payload?: unknown;
 };
 
@@ -10,11 +10,12 @@ export const joinGame = (gameId: string) => ({
 });
 export const startGame = () => ({ type: "start" as const });
 export const leaveGame = () => ({ type: "leave" as const });
-export const placeBid = (dieQuantity: number, dieValue: number) => ({
-  type: "placeBid" as const,
+export const bid = (dieQuantity: number, dieValue: number) => ({
+  type: "bid" as const,
   payload: {
     dieQuantity,
     dieValue,
   },
 });
+export const challenge = () => ({ type: "challenge" as const });
 

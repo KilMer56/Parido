@@ -159,27 +159,66 @@ class GameHandler extends BaseEventHandler {
           if (player) {
             const round = game.getCurrentRound();
             if (round) {
+              try {
+                round.placeBid(player, dieQuantity, dieValue);
+                const nextPlayer = game.getNextPlayer(player);
+                round.setActivePlayer(nextPlayer);
+                const bidData = {
+                  playerId: player.getId(),
+                  dieQuantity: dieQuantity,
+                  dieValue: dieValue,
+                  nextPlayerId: nextPlayer.getId(),
+                };
+
+                socket.to(gameId).emit("bidPlaced", bidData);
+                socket.emit("bidPlaced", bidData);
+              } catch (error) {
+                this.emitError(socket, error);
+                Logger.error("Bid error:", error);
+              }
+            } else {
+              this.emitError(socket, new Error("Round not found"));
+              Logger.error("Round not found:", gameId);
+            }
+          } else {
+            this.emitError(socket, new Error("Player not found"));
+            Logger.error("Player not found:", socket.id);
+          }
+        } else {
+          this.emitError(socket, new Error("Game not found"));
+          Logger.error("Game not found:", gameId);
+        }
+      },
+    },
+    {
+      name: "challengeBid",
+      handler: (socket: Socket, gameId: string) => {
+        Logger.info("Client challenging bid for: ", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          const player = game.getPlayerBySocketId(socket.id);
+          if (player) {
+            const round = game.getCurrentRound();
+            if (round) {
               if (player.getId() === round.getActivePlayer().getId()) {
                 try {
-                  round.placeBid(dieQuantity, dieValue);
-                  const nextPlayer = game.getNextPlayer(player);
-                  round.setActivePlayer(nextPlayer);
-                  const bidData = {
-                    playerId: player.getId(),
-                    dieQuantity: dieQuantity,
-                    dieValue: dieValue,
-                    nextPlayerId: nextPlayer.getId(),
-                  };
-
-                  socket.to(gameId).emit("bidPlaced", bidData);
-                  socket.emit("bidPlaced", bidData);
+                  const challenge = round.challengeBid(
+                    player,
+                    game.getActiveDices()
+                  );
+                  Logger.info("Challenge over:", challenge);
                 } catch (error) {
                   this.emitError(socket, error);
-                  Logger.error("Bid error:", error);
+                  Logger.error("Challenge error:", error);
                 }
               } else {
-                this.emitError(socket, new Error("It's not your turn to bid"));
-                Logger.error("Not your turn to bid:", gameId);
+                // Todo: Move logic to round
+                this.emitError(
+                  socket,
+                  new Error("It's not your turn to challenge")
+                );
+                Logger.error("Not your turn to challenge:", gameId);
                 return;
               }
             } else {

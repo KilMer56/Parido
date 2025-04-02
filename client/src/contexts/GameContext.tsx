@@ -54,7 +54,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         case "leave":
           gameHandler.current.leaveGame();
           break;
-        case "placeBid": {
+        case "bid": {
           const payload = action.payload as {
             dieQuantity: number;
             dieValue: number;
@@ -63,6 +63,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           gameHandler.current.placeBid(payload.dieQuantity, payload.dieValue);
           break;
         }
+        case "challenge":
+          gameHandler.current.challengeBid();
+          break;
       }
     },
     [isReady]

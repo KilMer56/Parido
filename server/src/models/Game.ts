@@ -74,6 +74,10 @@ export class Game {
     }
   }
 
+  public getActiveDices(): number[] {
+    return this.players.flatMap((player) => player.getHand());
+  }
+
   public end() {
     this.status = GameStatus.FINISHED;
   }

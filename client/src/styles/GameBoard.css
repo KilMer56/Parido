@@ -97,4 +97,22 @@
     align-items: center;
     gap: 5px;
     font-size: larger;
+    padding: 1rem 0;
+}
+
+.bid-inputs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.bid-input {
+    display: flex;
+    gap: 10px;
+}
+
+.bid-input > input {
+    width: 50px;
 }

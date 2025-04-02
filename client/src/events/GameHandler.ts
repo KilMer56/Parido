@@ -183,5 +183,10 @@ export class GameHandler {
       dieQalue
     );
   }
+
+  public challengeBid(): void {
+    Logger.info("Challenging bid");
+    this.socketManager.emit("challengeBid", this.game.getGameId());
+  }
 }
 

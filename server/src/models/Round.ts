@@ -56,9 +56,12 @@ export class Round {
     this.actions.push(action);
   }
 
-  public placeBid(quantity: number, value: number): Bid {
+  public placeBid(bidder: Player, quantity: number, value: number): Bid {
     if (this.state !== RoundState.ACTIVE) {
       throw new Error("Cannot place a bid when the round is not active.");
+    }
+    if (bidder !== this.activePlayer) {
+      throw new Error("You can't bid right now");
     }
     if (this.lastBid) {
       if (quantity < this.lastBid.getQuantity()) {
@@ -81,8 +84,18 @@ export class Round {
     return bid;
   }
 
-  public placeChallenge(bid: Bid, challenger: Player): Challenge {
-    const challenge = new Challenge(bid, challenger);
+  public challengeBid(challenger: Player, dices: number[]): Challenge {
+    if (this.state !== RoundState.ACTIVE) {
+      throw new Error("Cannot place a bid when the round is not active.");
+    }
+    if (!this.lastBid) {
+      throw new Error("Cannot challenge when there is not bid");
+    }
+    if (challenger !== this.activePlayer) {
+      throw new Error("You can't challenge right now");
+    }
+    const challenge = new Challenge(this.lastBid, challenger, dices);
+    challenge.resolve();
     this.actions.push(challenge);
     return challenge;
   }

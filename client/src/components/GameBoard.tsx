@@ -1,6 +1,6 @@
 import { Player } from "../models/Game";
 import { useGame } from "../contexts/GameContext";
-import { placeBid } from "../types/actions";
+import { challenge, bid } from "../types/actions";
 import { useState } from "react";
 
 export function GameBoard() {
@@ -16,7 +16,11 @@ export function GameBoard() {
   const [bidValue, setBidValue] = useState(1);
 
   const handleBid = () => {
-    dispatch(placeBid(bidQuantity, bidValue));
+    dispatch(bid(bidQuantity, bidValue));
+  };
+
+  const handleChallenge = () => {
+    dispatch(challenge());
   };
 
   if (!currentPlayer) {
@@ -80,26 +84,30 @@ export function GameBoard() {
             <span className="bid-value">No bids placed yet</span>
           )}
         </div>
-        <div className="bid-inputs">
-          <label>
-            Quantity:
-            <input
-              type="number"
-              value={bidQuantity}
-              onChange={(e) => setBidQuantity(Number(e.target.value))}
-              min="1"
-            />
-          </label>
-          <label>
-            Value:
-            <input
-              type="number"
-              value={bidValue}
-              onChange={(e) => setBidValue(Number(e.target.value))}
-              min="1"
-            />
-          </label>
-        </div>
+        {state.currentPlayerSocketId === state.activePlayerSocketId && (
+          <div className="bid-inputs">
+            <div className="bid-input">
+              <label>Quantity:</label>
+              <input
+                type="number"
+                value={bidQuantity}
+                onChange={(e) => setBidQuantity(Number(e.target.value))}
+                min="1"
+                max={state.players.length * 6}
+              />
+            </div>
+            <div className="bid-input">
+              <label>Value:</label>
+              <input
+                type="number"
+                value={bidValue}
+                onChange={(e) => setBidValue(Number(e.target.value))}
+                min="1"
+                max="6"
+              />
+            </div>
+          </div>
+        )}
       </div>
       <div className="actions-container">
         <button
@@ -111,6 +119,7 @@ export function GameBoard() {
         </button>
         <button
           className="action challenge-button"
+          onClick={handleChallenge}
           disabled={state.currentPlayerSocketId !== state.activePlayerSocketId}
         >
           Challenge
