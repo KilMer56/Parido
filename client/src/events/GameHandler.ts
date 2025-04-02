@@ -11,7 +11,6 @@ interface Player {
 export interface GameState {
   gameId: string | null;
   timestamp: string | null;
-  currentPlayers: number;
   maxPlayers: number;
   isStarted: boolean;
   canStart: boolean;
@@ -31,13 +30,16 @@ export class GameHandler {
       {
         name: "gameCreated",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const game = args[0] as { gameId: string; timestamp: string; maxPlayers: number };
+          const game = args[0] as {
+            gameId: string;
+            timestamp: string;
+            maxPlayers: number;
+          };
           Logger.info("Game created:", game);
 
           this.updateGameState({
             gameId: game.gameId,
             timestamp: game.timestamp,
-            currentPlayers: 1,
             maxPlayers: game.maxPlayers,
             isStarted: false,
             canStart: false,
@@ -48,32 +50,35 @@ export class GameHandler {
       {
         name: "gameJoined",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const game = args[0] as { gameId: string; timestamp: string; currentPlayers: number; maxPlayers: number };
+          const game = args[0] as {
+            gameId: string;
+            timestamp: string;
+            players: Player[];
+            maxPlayers: number;
+          };
           Logger.info("Game joined:", game);
 
           this.updateGameState({
             gameId: game.gameId,
             timestamp: game.timestamp,
-            currentPlayers: game.currentPlayers,
             maxPlayers: game.maxPlayers,
             isStarted: false,
-            canStart: game.currentPlayers > 1,
-            players: [],
+            canStart: game.players.length > 1,
+            players: game.players,
           });
         },
       },
       {
         name: "playerJoined",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const data = args[0] as { players: Player[]; currentPlayers: number; maxPlayers: number };
+          const data = args[0] as { players: Player[]; maxPlayers: number };
           Logger.info("Player joined:", data);
 
-          this.updateGameState(prev => ({
+          this.updateGameState((prev) => ({
             ...prev,
             players: data.players,
-            currentPlayers: data.currentPlayers,
             maxPlayers: data.maxPlayers,
-            canStart: data.currentPlayers > 1,
+            canStart: data.players.length > 1,
           }));
         },
       },
@@ -83,7 +88,7 @@ export class GameHandler {
           const data = args[0] as { timestamp: string };
           Logger.info("Game started:", data);
 
-          this.updateGameState(prev => ({
+          this.updateGameState((prev) => ({
             ...prev,
             isStarted: true,
             timestamp: data.timestamp,

@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { GameHandler, GameState } from "../events/GameHandler";
 
-
 interface GameContextType {
   state: GameState;
   createGame: () => void;
@@ -22,7 +21,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>({
     gameId: null,
     timestamp: null,
-    currentPlayers: 0,
     maxPlayers: 2,
     isStarted: false,
     canStart: false,

@@ -20,7 +20,7 @@ function GameContent() {
   }, [urlGameId, gameState.gameId, joinGame]);
 
   const handleLeaveGame = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const handleStartGame = () => {
@@ -34,7 +34,12 @@ function GameContent() {
       <div className="game-header">
         <div className="game-info">
           <h1>Game #{gameState.gameId}</h1>
-          <p className="game-timestamp">Created: {gameState.timestamp ? new Date(gameState.timestamp).toLocaleString() : 'Loading...'}</p>
+          <p className="game-timestamp">
+            Joined:{" "}
+            {gameState.timestamp
+              ? new Date(gameState.timestamp).toLocaleString()
+              : "Loading..."}
+          </p>
         </div>
         <button className="leave-game" onClick={handleLeaveGame}>
           Leave Game
@@ -46,15 +51,12 @@ function GameContent() {
           <div className="status-card">
             <h3>Status</h3>
             <p className="status-value">
-              {gameState.isStarted 
-                ? "Game in progress" 
-                : `Waiting for players (${gameState.currentPlayers}/${gameState.maxPlayers})`}
+              {gameState.isStarted
+                ? "Game in progress"
+                : `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`}
             </p>
             {!gameState.isStarted && gameState.canStart && (
-              <button 
-                className="start-game-button"
-                onClick={handleStartGame}
-              >
+              <button className="start-game-button" onClick={handleStartGame}>
                 Start Game
               </button>
             )}

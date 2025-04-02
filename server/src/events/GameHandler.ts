@@ -36,23 +36,28 @@ class GameHandler extends BaseEventHandler {
             socket.emit("gameJoined", {
               gameId: game.getId(),
               timestamp: getCurrentDatetime(),
-              currentPlayers: game.getPlayers().length,
+              players: game.getPlayers().map((player) => ({
+                id: player.getId(),
+                name: player.getName(),
+              })),
               maxPlayers: game.getMaxPlayers(),
             });
 
             // Notify all players about the new player
-            game.getId() && socket.to(game.getId()).emit("playerJoined", {
-              players: game.getPlayers().map(player => ({
-                id: player.getId(),
-                name: player.getName(),
-              })),
-              currentPlayers: game.getPlayers().length,
-              maxPlayers: game.getMaxPlayers(),
-            });
+            game.getId() &&
+              socket.to(game.getId()).emit("playerJoined", {
+                players: game.getPlayers().map((player) => ({
+                  id: player.getId(),
+                  name: player.getName(),
+                })),
+                maxPlayers: game.getMaxPlayers(),
+              });
 
             Logger.info("Player joined game:", gameId);
           } else {
-            socket.emit("error", { message: "Game is full or has already started" });
+            socket.emit("error", {
+              message: "Game is full or has already started",
+            });
             Logger.error("Game is full or has started:", gameId);
           }
         } else {
@@ -70,16 +75,20 @@ class GameHandler extends BaseEventHandler {
         if (game) {
           if (game.canStart()) {
             if (game.start()) {
-              game.getId() && socket.to(game.getId()).emit("gameStarted", {
-                timestamp: getCurrentDatetime(),
-              });
+              game.getId() &&
+                socket.to(game.getId()).emit("gameStarted", {
+                  timestamp: getCurrentDatetime(),
+                });
               socket.emit("gameStarted", {
                 timestamp: getCurrentDatetime(),
               });
               Logger.info("Game started:", gameId);
             }
           } else {
-            socket.emit("error", { message: "Cannot start game: not enough players or game already started" });
+            socket.emit("error", {
+              message:
+                "Cannot start game: not enough players or game already started",
+            });
             Logger.error("Cannot start game:", gameId);
           }
         } else {
