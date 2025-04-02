@@ -2,10 +2,19 @@ export interface Player {
   id: string;
   name: string;
   socketId: string;
+  diceCount?: number;
+}
+
+export interface Round {
+  number: number;
+  state: string;
+  activePlayerSocketId: string;
   hand: number[];
+  lastBid?: Bid | null;
 }
 
 export interface Bid {
+  playerId: string;
   quantity: number;
   value: number;
 }
@@ -14,13 +23,11 @@ export type GameStatus = "waiting" | "in_progress" | "finished";
 
 export interface GameState {
   gameId: string | null;
-  timestamp: string | null;
-  maxPlayers: number;
   status: GameStatus;
+  maxPlayers: number;
   players: Player[];
-  currentPlayerSocketId?: string;
-  activePlayerSocketId?: string;
-  currentBid?: Bid;
+  currentRound?: Round | null;
+  playerSocketId?: string;
 }
 
 export class Game {
@@ -30,9 +37,8 @@ export class Game {
   public static createInitialState(): GameState {
     return {
       gameId: null,
-      timestamp: null,
-      maxPlayers: 2,
       status: "waiting",
+      maxPlayers: 2,
       players: [],
     };
   }
@@ -58,12 +64,20 @@ export class Game {
     return this.state.gameId;
   }
 
-  public setTimestamp(timestamp: string): void {
-    this.setState({ timestamp });
-  }
-
   public setStatus(status: GameStatus): void {
     this.setState({ status });
+  }
+
+  public getStatus(): GameStatus {
+    return this.state.status;
+  }
+
+  public setMaxPlayers(maxPlayers: number): void {
+    this.setState({ maxPlayers });
+  }
+
+  public getMaxPlayers(): number {
+    return this.state.maxPlayers;
   }
 
   public setPlayers(players: Player[]): void {
@@ -78,28 +92,26 @@ export class Game {
     return this.state.players.find((player) => player.id === playerId);
   }
 
-  public setCurrentPlayerSocketId(socketId: string): void {
-    this.setState({ currentPlayerSocketId: socketId });
+  public setCurrentRound(round: Round): void {
+    this.setState({ currentRound: round });
   }
 
-  public setActivePlayerSocketId(socketId: string): void {
-    this.setState({ activePlayerSocketId: socketId });
+  public getCurrentRound(): Round | null {
+    return this.state.currentRound || null;
   }
 
-  public getCurrentPlayerSocketId(): string | undefined {
-    return this.state.currentPlayerSocketId;
+  public setPlayerSocketId(socketId: string): void {
+    this.setState({ playerSocketId: socketId });
   }
 
-  public getActivePlayerSocketId(): string | undefined {
-    return this.state.activePlayerSocketId;
+  public getPlayerSocketId(): string | null {
+    return this.state.playerSocketId || null;
   }
 
-  public isCurrentPlayerActive(): boolean {
-    return this.state.currentPlayerSocketId === this.state.activePlayerSocketId;
-  }
-
-  public setCurrentBid(bid: Bid): void {
-    this.setState({ currentBid: bid });
+  public isPlayerTurn(): boolean {
+    return (
+      this.state.currentRound?.activePlayerSocketId === this.getPlayerSocketId()
+    );
   }
 
   public canStart(): boolean {

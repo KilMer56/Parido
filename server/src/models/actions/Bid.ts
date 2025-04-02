@@ -1,7 +1,8 @@
-import { randomId } from "../utils/random";
-import { Player } from "./Player";
+import { randomId } from "../../utils/random";
+import { Player } from "../Player";
+import { Action, ActionType } from "./Action";
 
-export class Bid {
+export class Bid implements Action {
   private id: string;
   private player: Player;
   private quantity: number;
@@ -14,9 +15,28 @@ export class Bid {
     this.value = value;
   }
 
+  // Action interface methods
+
   public getId(): string {
     return this.id;
   }
+
+  public getPlayer(): Player {
+    return this.player;
+  }
+
+  public getType(): string {
+    return ActionType.BID;
+  }
+
+  public getData(): any {
+    return {
+      quantity: this.quantity,
+      value: this.value,
+    };
+  }
+
+  // Bid specific methods
 
   public getQuantity(): number {
     return this.quantity;
@@ -25,8 +45,5 @@ export class Bid {
   public getValue(): number {
     return this.value;
   }
-
-  public getPlayer(): Player {
-    return this.player;
-  }
 }
+

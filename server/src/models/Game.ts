@@ -60,12 +60,13 @@ export class Game {
     this.rounds.push(this.currentRound);
   }
 
-  public endRound(winner: Player) {
+  public endRound() {
     if (this.currentRound) {
-      this.currentRound.end(winner);
+      this.currentRound.end();
+      this.currentRound.getLoser()?.removeDice();
 
       // Check if game is finished (only one player remains)
-      const activePlayers = this.players.filter((p) => p.isPlayerActive());
+      const activePlayers = this.players.filter((p) => p.isActive());
       if (activePlayers.length <= 1) {
         this.status = GameStatus.FINISHED;
       } else {

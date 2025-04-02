@@ -1,7 +1,8 @@
 import { randomId } from "../utils/random";
 import { Player } from "./Player";
-import { Bid } from "./Bid";
-import { Challenge } from "./Challenge";
+import { Action } from "./actions/Action";
+import { Bid } from "./actions/Bid";
+import { Challenge } from "./actions/Challenge";
 
 export enum RoundState {
   ACTIVE,
@@ -11,24 +12,25 @@ export enum RoundState {
 export class Round {
   private id: string;
   private number: number;
+  private previousPlayer: Player | null;
   private activePlayer: Player;
-  private actions: (Bid | Challenge)[];
+  private actions: Action[];
   private lastBid: Bid | null;
-  private winner: Player | null;
+  private loser: Player | null;
   private state: RoundState;
 
   constructor(number: number, activePlayer: Player) {
     this.id = randomId();
     this.number = number;
+    this.previousPlayer = null;
     this.activePlayer = activePlayer;
     this.actions = [];
     this.lastBid = null;
-    this.winner = null;
+    this.loser = null;
     this.state = RoundState.ACTIVE;
   }
 
-  public end(winner: Player) {
-    this.winner = winner;
+  public end() {
     this.state = RoundState.FINISHED;
   }
 
@@ -40,19 +42,24 @@ export class Round {
     return this.number;
   }
 
+  public getPreviousPlayer(): Player | null {
+    return this.previousPlayer;
+  }
+
   public getActivePlayer(): Player {
     return this.activePlayer;
   }
 
   public setActivePlayer(player: Player) {
+    this.previousPlayer = this.activePlayer;
     this.activePlayer = player;
   }
 
-  public getActions(): (Bid | Challenge)[] {
+  public getActions(): Action[] {
     return this.actions;
   }
 
-  public addAction(action: Bid | Challenge) {
+  public addAction(action: Action) {
     this.actions.push(action);
   }
 
@@ -88,25 +95,30 @@ export class Round {
     if (this.state !== RoundState.ACTIVE) {
       throw new Error("Cannot place a bid when the round is not active.");
     }
-    if (!this.lastBid) {
-      throw new Error("Cannot challenge when there is not bid");
+    if (!this.lastBid || !this.previousPlayer) {
+      throw new Error(
+        "Cannot challenge when there is not bid or no previous player"
+      );
     }
     if (challenger !== this.activePlayer) {
       throw new Error("You can't challenge right now");
     }
     const challenge = new Challenge(this.lastBid, challenger, dices);
-    challenge.resolve();
     this.actions.push(challenge);
+
+    // Resolving challenge
+    const success = challenge.resolve();
+    this.loser = success ? this.previousPlayer : this.activePlayer;
+
     return challenge;
   }
 
-  public getWinner(): Player | null {
-    return this.winner;
+  public getLoser(): Player | null {
+    return this.loser;
   }
 
-  public setWinner(player: Player) {
-    this.winner = player;
-    this.state = RoundState.FINISHED;
+  public getLastBid(): Bid | null {
+    return this.lastBid;
   }
 
   public getState(): RoundState {

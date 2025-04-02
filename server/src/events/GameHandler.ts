@@ -4,6 +4,11 @@ import Logger from "../utils/logger";
 import { BaseEventHandler, SocketEvent } from "./BasicHandler";
 import { getCurrentDatetime } from "../utils/date";
 import { Player } from "../models/Player";
+import { Round, RoundState } from "../models/Round";
+import { Game } from "../models/Game";
+import { Bid } from "../models/actions/Bid";
+import { Action } from "../models/actions/Action";
+import e from "express";
 
 class GameHandler extends BaseEventHandler {
   protected events: SocketEvent[] = [
@@ -17,7 +22,6 @@ class GameHandler extends BaseEventHandler {
 
         socket.emit("gameCreated", {
           gameId: game.getId(),
-          timestamp: getCurrentDatetime(),
           maxPlayers: game.getMaxPlayers(),
         });
 
@@ -34,27 +38,19 @@ class GameHandler extends BaseEventHandler {
           // Todo: pass name
           if (game.addPlayer(new Player(socket.id, "Guest"))) {
             socket.join(gameId);
-            socket.emit("gameJoined", {
+
+            const playerJoinedData = {
               gameId: game.getId(),
-              timestamp: getCurrentDatetime(),
               players: game.getPlayers().map((player) => ({
                 id: player.getId(),
                 name: player.getName(),
                 socketId: player.getSocketId(),
               })),
-              maxPlayers: game.getMaxPlayers(),
-            });
+            };
 
             // Notify all players about the new player
-            game.getId() &&
-              socket.to(game.getId()).emit("playerJoined", {
-                players: game.getPlayers().map((player) => ({
-                  id: player.getId(),
-                  name: player.getName(),
-                  socketId: player.getSocketId(),
-                })),
-                maxPlayers: game.getMaxPlayers(),
-              });
+            socket.emit("playerJoined", playerJoinedData);
+            socket.to(game.getId()).emit("playerJoined", playerJoinedData);
 
             Logger.info("Player joined game:", gameId);
           } else {
@@ -63,46 +59,6 @@ class GameHandler extends BaseEventHandler {
               new Error("Game is full or has already started")
             );
             Logger.error("Game is full or has started:", gameId);
-          }
-        } else {
-          this.emitError(socket, new Error("Game not found"));
-          Logger.error("Game not found:", gameId);
-        }
-      },
-    },
-    {
-      name: "startGame",
-      handler: (socket: Socket, gameId: string) => {
-        Logger.info("Client requesting to start game:", gameId);
-
-        const game = gameManager.getGame(gameId);
-        if (game) {
-          if (game.start()) {
-            const gameData = {
-              timestamp: getCurrentDatetime(),
-              players: game.getPlayers().map((player) => ({
-                id: player.getId(),
-                name: player.getName(),
-                socketId: player.getSocketId(),
-                hand: player.getHand(),
-              })),
-              currentPlayerId: game
-                .getCurrentRound()
-                ?.getActivePlayer()
-                .getId(),
-            };
-            game.getId() &&
-              socket.to(game.getId()).emit("gameStarted", gameData);
-            socket.emit("gameStarted", gameData);
-            Logger.info("Game started:", gameId);
-          } else {
-            this.emitError(
-              socket,
-              new Error(
-                "Cannot start game: not enough players or game already started"
-              )
-            );
-            Logger.error("Cannot start game:", gameId);
           }
         } else {
           this.emitError(socket, new Error("Game not found"));
@@ -122,24 +78,93 @@ class GameHandler extends BaseEventHandler {
           if (player) {
             game.removePlayer(player);
 
-            // Notify other players about the player leaving
-            socket.to(gameId).emit("playerLeft", {
-              playerId: player.getId(),
-              players: game.getPlayers().map((player) => ({
-                id: player.getId(),
-                name: player.getName(),
-                socketId: player.getSocketId(),
-              })),
-              maxPlayers: game.getMaxPlayers(),
-            });
+            Logger.info("Player left game:", gameId);
 
-            // If no players left, remove the game
             if (game.getPlayers().length === 0) {
               gameManager.removeGame(gameId);
-            }
+            } else {
+              const playerLeftData = {
+                gameId: game.getId(),
+                players: game.getPlayers().map((player) => ({
+                  id: player.getId(),
+                  name: player.getName(),
+                  socketId: player.getSocketId(),
+                })),
+              };
 
-            Logger.info("Player left game:", gameId);
+              // Notify all players about the player leaving
+              socket.to(game.getId()).emit("playerLeft", playerLeftData);
+              socket.leave(gameId);
+            }
           }
+        }
+      },
+    },
+    {
+      name: "startGame",
+      handler: (socket: Socket, gameId: string) => {
+        Logger.info("Client requesting to start game:", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          if (game.start()) {
+            Logger.info("Game started:", gameId);
+
+            if (game.getCurrentRound()) {
+              let gameData = {
+                gameId: game.getId(),
+                players: game.getPlayers().map((player) => ({
+                  id: player.getId(),
+                  name: player.getName(),
+                  socketId: player.getSocketId(),
+                  diceCount: player.getHand().length,
+                })),
+                currentRound: {
+                  number: game.getCurrentRound()?.getNumber(),
+                  state: game.getCurrentRound()?.getState(),
+                  activePlayerSocketId: game
+                    .getCurrentRound()
+                    ?.getActivePlayer()
+                    .getSocketId(),
+                  lastBid: null,
+                },
+              };
+
+              // Notify all players with their hand
+              game.getPlayers().forEach((player) => {
+                const gameDataWithHands = {
+                  ...gameData,
+                  currentRound: {
+                    ...gameData.currentRound,
+                    hand: player.getHand(),
+                  },
+                };
+
+                if (player.getSocketId() === socket.id) {
+                  socket.emit("gameStarted", gameDataWithHands);
+                } else {
+                  socket
+                    .to(game.getId())
+                    .to(player.getSocketId())
+                    .emit("gameStarted", gameDataWithHands);
+                }
+              });
+            } else {
+              this.emitError(socket, new Error("Round not found"));
+              Logger.error("Round not found:", gameId);
+            }
+          } else {
+            this.emitError(
+              socket,
+              new Error(
+                "Cannot start game: not enough players or game already started"
+              )
+            );
+            Logger.error("Cannot start game:", gameId);
+          }
+        } else {
+          this.emitError(socket, new Error("Game not found"));
+          Logger.error("Game not found:", gameId);
         }
       },
     },
@@ -148,8 +173,8 @@ class GameHandler extends BaseEventHandler {
       handler: (
         socket: Socket,
         gameId: string,
-        dieQuantity: number,
-        dieValue: number
+        quantity: number,
+        value: number
       ) => {
         Logger.info("Client bidding in game:", gameId);
 
@@ -160,14 +185,32 @@ class GameHandler extends BaseEventHandler {
             const round = game.getCurrentRound();
             if (round) {
               try {
-                round.placeBid(player, dieQuantity, dieValue);
+                round.placeBid(player, quantity, value);
                 const nextPlayer = game.getNextPlayer(player);
                 round.setActivePlayer(nextPlayer);
+
+                Logger.info("Bid placed:", player.getName(), quantity, value);
+
                 const bidData = {
-                  playerId: player.getId(),
-                  dieQuantity: dieQuantity,
-                  dieValue: dieValue,
-                  nextPlayerId: nextPlayer.getId(),
+                  gameId: game.getId(),
+                  currentRound: {
+                    activePlayerSocketId: game
+                      .getCurrentRound()
+                      ?.getActivePlayer()
+                      .getSocketId(),
+                    lastBid: {
+                      playerId: game
+                        .getCurrentRound()
+                        ?.getLastBid()
+                        ?.getPlayer()
+                        .getId(),
+                      quantity: game
+                        .getCurrentRound()
+                        ?.getLastBid()
+                        ?.getQuantity(),
+                      value: game.getCurrentRound()?.getLastBid()?.getValue(),
+                    },
+                  },
                 };
 
                 socket.to(gameId).emit("bidPlaced", bidData);
@@ -201,25 +244,30 @@ class GameHandler extends BaseEventHandler {
           if (player) {
             const round = game.getCurrentRound();
             if (round) {
-              if (player.getId() === round.getActivePlayer().getId()) {
-                try {
-                  const challenge = round.challengeBid(
-                    player,
-                    game.getActiveDices()
-                  );
-                  Logger.info("Challenge over:", challenge);
-                } catch (error) {
-                  this.emitError(socket, error);
-                  Logger.error("Challenge error:", error);
-                }
-              } else {
-                // Todo: Move logic to round
-                this.emitError(
-                  socket,
-                  new Error("It's not your turn to challenge")
+              try {
+                const challenge = round.challengeBid(
+                  player,
+                  game.getActiveDices()
                 );
-                Logger.error("Not your turn to challenge:", gameId);
-                return;
+
+                Logger.info("Challenge over:", challenge);
+
+                const loser = round.getLoser();
+                game.endRound();
+
+                const newRoundData = {
+                  players: game.getPlayers().map((player) => ({
+                    id: player.getId(),
+                    name: player.getName(),
+                    socketId: player.getSocketId(),
+                    hand: player.getHand(),
+                  })),
+                  loserId: loser?.getId(),
+                  winnerId: challenge.winner.getId(),
+                };
+              } catch (error) {
+                this.emitError(socket, error);
+                Logger.error("Challenge error:", error);
               }
             } else {
               this.emitError(socket, new Error("Round not found"));
@@ -243,6 +291,59 @@ class GameHandler extends BaseEventHandler {
     } else {
       socket.emit("error", { message: "An unknown error occurred" });
     }
+  }
+
+  private buildPlayerSocketData(player: Player) {
+    return {
+      id: player.getId(),
+      name: player.getName(),
+      hand: player.getHand(),
+      isActive: player.isActive(),
+    };
+  }
+
+  private buildActionSocketData(action: Action) {
+    return {
+      id: action.getId(),
+      type: action.getType(),
+      playerId: action.getPlayer().getId(),
+      data: action.getData(),
+    };
+  }
+
+  private buildRoundSocketData(round: Round) {
+    return {
+      state: round.getState(),
+      actions: round
+        .getActions()
+        .map((action) => this.buildActionSocketData(action)),
+      lastBid: round.getLastBid(),
+      loser: round.getLoser()?.getId(),
+    };
+  }
+
+  private buildGameData(game: Game) {
+    return {
+      players: game.getPlayers().map((player) => ({
+        id: player.getId(),
+        name: player.getName(),
+        hand: player.getHand(),
+        isActive: player.isActive(),
+      })),
+      rounds: game.getRounds().map((round) => ({
+        state: round.getState(),
+        actions: round.getActions().map((action) => ({
+          id: action.getId(),
+          type: action.getType(),
+          playerId: action.getPlayer().getId(),
+          data: action.getData(),
+        })),
+      })),
+      currentPlayerSocketId: game
+        .getCurrentRound()
+        ?.getActivePlayer()
+        .getSocketId(),
+    };
   }
 }
 

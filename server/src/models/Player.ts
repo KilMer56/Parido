@@ -5,7 +5,7 @@ export class Player {
   private name: string;
   private diceCount: number;
   private hand: number[];
-  private isActive: boolean;
+  private active: boolean;
   private socketId: string;
 
   constructor(socketId: string, name: string, diceCount: number = 5) {
@@ -13,7 +13,7 @@ export class Player {
     this.name = name;
     this.diceCount = diceCount;
     this.hand = Array(diceCount).fill(0);
-    this.isActive = true;
+    this.active = true;
     this.socketId = socketId;
   }
 
@@ -37,28 +37,27 @@ export class Player {
     return this.hand;
   }
 
-  public isPlayerActive(): boolean {
-    return this.isActive;
+  public isActive(): boolean {
+    return this.active;
   }
 
   public setActive(active: boolean) {
-    this.isActive = active;
+    this.active = active;
   }
 
   public getSocketId(): string {
     return this.socketId;
   }
 
-  public loseDice() {
+  public removeDice() {
     if (this.diceCount > 0) {
       this.diceCount--;
       this.hand = this.hand.slice(0, this.diceCount);
     }
-  }
 
-  public setDiceCount(count: number) {
-    this.diceCount = count;
-    this.hand = Array(count).fill(0);
+    if (this.diceCount === 0) {
+      this.active = false;
+    }
   }
 }
 

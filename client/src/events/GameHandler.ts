@@ -1,7 +1,7 @@
 import { Socket } from "socket.io-client";
 import { SocketEvent, SocketManager } from "./SocketManager";
 import Logger from "../utils/logger";
-import { Game, Player } from "../models/Game";
+import { Game, Player, Round } from "../models/Game";
 
 export class GameHandler {
   private socketManager: SocketManager;
@@ -18,49 +18,39 @@ export class GameHandler {
         handler: (_socket: Socket, ...args: unknown[]) => {
           const game = args[0] as {
             gameId: string;
-            timestamp: string;
             maxPlayers: number;
           };
+
           Logger.info("Game created:", game);
 
           this.game.setGameId(game.gameId);
-          this.game.setTimestamp(game.timestamp);
           this.game.setState({ maxPlayers: game.maxPlayers });
-          const socketId = this.socketManager.getSocket().id;
-          if (socketId) {
-            this.game.setCurrentPlayerSocketId(socketId);
-          }
-        },
-      },
-      {
-        name: "gameJoined",
-        handler: (_socket: Socket, ...args: unknown[]) => {
-          const game = args[0] as {
-            gameId: string;
-            timestamp: string;
-            players: Player[];
-            maxPlayers: number;
-          };
-          Logger.info("Game joined:", game);
 
-          this.game.setGameId(game.gameId);
-          this.game.setTimestamp(game.timestamp);
-          this.game.setPlayers(game.players);
-          this.game.setState({ maxPlayers: game.maxPlayers });
           const socketId = this.socketManager.getSocket().id;
           if (socketId) {
-            this.game.setCurrentPlayerSocketId(socketId);
+            this.game.setPlayerSocketId(socketId);
           }
         },
       },
       {
         name: "playerJoined",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const data = args[0] as { players: Player[]; maxPlayers: number };
-          Logger.info("Player joined:", data);
+          const game = args[0] as {
+            gameId: string;
+            players: Player[];
+            maxPlayers: number;
+          };
+          Logger.info("Game joined:", game);
 
-          this.game.setPlayers(data.players);
-          this.game.setState({ maxPlayers: data.maxPlayers });
+          if (this.game.getGameId() === null) {
+            this.game.setGameId(game.gameId);
+            const socketId = this.socketManager.getSocket().id;
+            if (socketId) {
+              this.game.setPlayerSocketId(socketId);
+            }
+          }
+
+          this.game.setPlayers(game.players);
         },
       },
       {
@@ -80,67 +70,41 @@ export class GameHandler {
         name: "gameStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
-            timestamp: string;
+            gameId: string;
             players: Player[];
-            currentPlayerId: string;
+            currentRound: Round;
           };
+
           Logger.info("Game started:", data);
 
-          this.game.setTimestamp(data.timestamp);
           this.game.setPlayers(data.players);
           this.game.setStatus("in_progress");
-          const activePlayerSocketId = this.game.getPlayerById(
-            data.currentPlayerId
-          )?.socketId;
-          Logger.debug(
-            "Active player socket ID:",
-            activePlayerSocketId,
-            "Current player socket ID:",
-            this.game.getCurrentPlayerSocketId()
-          );
-          if (activePlayerSocketId) {
-            this.game.setActivePlayerSocketId(activePlayerSocketId);
-          } else {
-            Logger.error("Active player not found:", data.currentPlayerId);
-          }
+          this.game.setCurrentRound(data.currentRound);
         },
       },
       {
         name: "bidPlaced",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
-            playerId: string;
-            dieQuantity: number;
-            dieValue: number;
-            nextPlayerId: string;
+            gameId: string;
+            currentRound: {
+              activePlayerSocketId: string;
+              lastBid: {
+                playerId: string;
+                quantity: number;
+                value: number;
+              };
+            };
           };
 
           Logger.info("Bid placed:", data);
 
-          this.game.setCurrentBid({
-            quantity: data.dieQuantity,
-            value: data.dieValue,
-          });
-
-          const nextPlayerSocketId = this.game.getPlayerById(
-            data.nextPlayerId
-          )?.socketId;
-          if (nextPlayerSocketId) {
-            Logger.debug(
-              "Next player socket ID:",
-              nextPlayerSocketId,
-              "Current player socket ID:",
-              this.game.getCurrentPlayerSocketId()
-            );
-            this.game.setActivePlayerSocketId(nextPlayerSocketId);
-          } else {
-            Logger.error("Next player not found:", data.nextPlayerId);
+          const round = this.game.getCurrentRound();
+          if (round) {
+            round.activePlayerSocketId = data.currentRound.activePlayerSocketId;
+            round.lastBid = data.currentRound.lastBid;
+            this.game.setCurrentRound(round);
           }
-
-          // const player = this.game.getPlayer(data.playerId);
-          // if (player) {
-          //   player.setBid(data.dieQuantity, data.dieValue);
-          // }
         },
       },
     ];
@@ -172,16 +136,12 @@ export class GameHandler {
   public leaveGame(): void {
     Logger.info("Leaving game");
     this.socketManager.emit("leaveGame", this.game.getGameId());
+    this.game.setState(Game.createInitialState());
   }
 
-  public placeBid(dieQuantity: number, dieQalue: number): void {
-    Logger.info("Placing bid:", dieQuantity, dieQalue);
-    this.socketManager.emit(
-      "placeBid",
-      this.game.getGameId(),
-      dieQuantity,
-      dieQalue
-    );
+  public placeBid(quantity: number, value: number): void {
+    Logger.info("Placing bid:", quantity, value);
+    this.socketManager.emit("placeBid", this.game.getGameId(), quantity, value);
   }
 
   public challengeBid(): void {

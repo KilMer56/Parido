@@ -19,6 +19,7 @@ function GameContent() {
   }, [urlGameId, gameState.gameId, dispatch]);
 
   const handleLeaveGame = () => {
+    // Todo: Fix join when leaving
     dispatch(leaveGame());
     navigate("/");
   };
@@ -48,12 +49,6 @@ function GameContent() {
       <div className="game-header">
         <div className="game-info">
           <h1>Game #{gameState.gameId}</h1>
-          <p className="game-timestamp">
-            Joined:{" "}
-            {gameState.timestamp
-              ? new Date(gameState.timestamp).toLocaleString()
-              : "Loading..."}
-          </p>
         </div>
         <button className="leave-game" onClick={handleLeaveGame}>
           Leave Game

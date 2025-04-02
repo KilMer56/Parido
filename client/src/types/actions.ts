@@ -10,11 +10,11 @@ export const joinGame = (gameId: string) => ({
 });
 export const startGame = () => ({ type: "start" as const });
 export const leaveGame = () => ({ type: "leave" as const });
-export const bid = (dieQuantity: number, dieValue: number) => ({
+export const bid = (quantity: number, value: number) => ({
   type: "bid" as const,
   payload: {
-    dieQuantity,
-    dieValue,
+    quantity: quantity,
+    value: value,
   },
 });
 export const challenge = () => ({ type: "challenge" as const });

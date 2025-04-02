@@ -56,11 +56,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           break;
         case "bid": {
           const payload = action.payload as {
-            dieQuantity: number;
-            dieValue: number;
+            quantity: number;
+            value: number;
           };
 
-          gameHandler.current.placeBid(payload.dieQuantity, payload.dieValue);
+          gameHandler.current.placeBid(payload.quantity, payload.value);
           break;
         }
         case "challenge":
