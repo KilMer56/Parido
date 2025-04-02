@@ -1,8 +1,7 @@
 import { Socket } from "socket.io-client";
 import { SocketEvent, SocketManager } from "./SocketManager";
 import Logger from "../utils/logger";
-import { Player } from "../types/game";
-import { Game } from "../models/Game";
+import { Game, Player } from "../models/Game";
 
 export class GameHandler {
   private socketManager: SocketManager;

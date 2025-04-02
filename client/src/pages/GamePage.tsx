@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, GameProvider } from "../contexts/GameContext";
-import { Player, canStartGame, getStatusText } from "../types/game";
+import { Player } from "../models/Game";
 import { joinGame, startGame, leaveGame } from "../types/actions";
 
 function GameContent() {
@@ -27,6 +27,13 @@ function GameContent() {
     }
   };
 
+  const canStart = gameState.status === 'waiting' && gameState.players.length > 1;
+  const getStatusText = () => {
+    return gameState.status === 'in_progress' 
+      ? 'Game in progress' 
+      : `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`;
+  };
+
   return (
     <div className="game-container">
       <div className="game-header">
@@ -48,8 +55,8 @@ function GameContent() {
         <div className="game-status">
           <div className="status-card">
             <h3>Status</h3>
-            <p className="status-value">{getStatusText(gameState)}</p>
-            {canStartGame(gameState) && (
+            <p className="status-value">{getStatusText()}</p>
+            {canStart && (
               <button className="start-game-button" onClick={handleStartGame}>
                 Start Game
               </button>

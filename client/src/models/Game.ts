@@ -1,18 +1,35 @@
-import { GameState, GameStatus, Player } from '../types/game';
+export interface Player {
+  id: string;
+  name: string;
+}
+
+export type GameStatus = 'waiting' | 'in_progress' | 'finished';
+
+export interface GameState {
+  gameId: string | null;
+  timestamp: string | null;
+  maxPlayers: number;
+  status: GameStatus;
+  players: Player[];
+}
 
 export class Game {
   private state: GameState;
   private updateState: (state: GameState) => void;
 
-  constructor(updateState: (state: GameState) => void) {
-    this.updateState = updateState;
-    this.state = {
+  public static createInitialState(): GameState {
+    return {
       gameId: null,
       timestamp: null,
       maxPlayers: 2,
       status: 'waiting',
       players: [],
     };
+  }
+
+  constructor(updateState: (state: GameState) => void) {
+    this.updateState = updateState;
+    this.state = Game.createInitialState();
   }
 
   public getState(): GameState {
@@ -68,13 +85,16 @@ export class Game {
   }
 
   public reset(): void {
-    this.state = {
-      gameId: null,
-      timestamp: null,
-      maxPlayers: 2,
-      status: 'waiting',
-      players: [],
-    };
+    this.state = Game.createInitialState();
     this.updateState(this.state);
+  }
+
+  // Game logic methods moved from types/game.ts
+  public getPlayerCountText(): string {
+    return `Waiting for players (${this.state.players.length}/${this.state.maxPlayers})`;
+  }
+
+  public getStatusText(): string {
+    return this.state.status === 'in_progress' ? 'Game in progress' : this.getPlayerCountText();
   }
 } 

@@ -6,9 +6,8 @@ import React, {
   createContext,
 } from "react";
 import { GameHandler } from "../events/GameHandler";
-import { GameState, createInitialGameState } from "../types/game";
+import { GameState, Game } from "../models/Game";
 import { GameAction } from "../types/actions";
-import { Game } from "../models/Game";
 
 interface GameContextType {
   state: GameState;
@@ -19,7 +18,7 @@ interface GameContextType {
 export const GameContext = createContext<GameContextType | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<GameState>(createInitialGameState());
+  const [state, setState] = useState<GameState>(Game.createInitialState());
   const [isReady, setIsReady] = useState(false);
   const gameHandler = useRef<GameHandler | null>(null);
   const game = useRef<Game | null>(null);
