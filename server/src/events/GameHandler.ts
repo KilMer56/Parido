@@ -164,18 +164,15 @@ class GameHandler extends BaseEventHandler {
                   round.placeBid(dieQuantity, dieValue);
                   const nextPlayer = game.getNextPlayer(player);
                   round.setActivePlayer(nextPlayer);
-                  socket.to(gameId).emit("bidPlaced", {
+                  const bidData = {
                     playerId: player.getId(),
-                    diceNumber: dieQuantity,
-                    diceValue: dieValue,
+                    dieQuantity: dieQuantity,
+                    dieValue: dieValue,
                     nextPlayerId: nextPlayer.getId(),
-                  });
-                  socket.emit("bidPlaced", {
-                    playerId: player.getId(),
-                    diceNumber: dieQuantity,
-                    diceValue: dieValue,
-                    nextPlayerId: nextPlayer.getId(),
-                  });
+                  };
+
+                  socket.to(gameId).emit("bidPlaced", bidData);
+                  socket.emit("bidPlaced", bidData);
                 } catch (error) {
                   this.emitError(socket, error);
                   Logger.error("Bid error:", error);

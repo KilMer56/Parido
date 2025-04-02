@@ -116,6 +116,12 @@ export class GameHandler {
           };
 
           Logger.info("Bid placed:", data);
+
+          this.game.setCurrentBid({
+            quantity: data.dieQuantity,
+            value: data.dieValue,
+          });
+
           const nextPlayerSocketId = this.game.getPlayerById(
             data.nextPlayerId
           )?.socketId;
