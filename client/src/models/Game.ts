@@ -13,6 +13,7 @@ export interface GameState {
   maxPlayers: number;
   status: GameStatus;
   players: Player[];
+  currentPlayerSocketId: string | null;
 }
 
 export class Game {
@@ -26,6 +27,7 @@ export class Game {
       maxPlayers: 2,
       status: 'waiting',
       players: [],
+      currentPlayerSocketId: null,
     };
   }
 
@@ -64,6 +66,18 @@ export class Game {
 
   public setPlayers(players: Player[]): void {
     this.setState({ players });
+  }
+
+  public setCurrentPlayerSocketId(socketId: string): void {
+    this.setState({ currentPlayerSocketId: socketId });
+  }
+
+  public getCurrentPlayerSocketId(): string | null {
+    return this.state.currentPlayerSocketId;
+  }
+
+  public isCurrentPlayer(socketId: string): boolean {
+    return this.state.currentPlayerSocketId === socketId;
   }
 
   public addPlayer(player: Player): void {

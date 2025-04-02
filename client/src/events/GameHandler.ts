@@ -26,6 +26,10 @@ export class GameHandler {
           this.game.setGameId(game.gameId);
           this.game.setTimestamp(game.timestamp);
           this.game.setState({ maxPlayers: game.maxPlayers });
+          const socketId = this.socketManager.getSocket().id;
+          if (socketId) {
+            this.game.setCurrentPlayerSocketId(socketId);
+          }
         },
       },
       {
@@ -43,6 +47,10 @@ export class GameHandler {
           this.game.setTimestamp(game.timestamp);
           this.game.setPlayers(game.players);
           this.game.setState({ maxPlayers: game.maxPlayers });
+          const socketId = this.socketManager.getSocket().id;
+          if (socketId) {
+            this.game.setCurrentPlayerSocketId(socketId);
+          }
         },
       },
       {
