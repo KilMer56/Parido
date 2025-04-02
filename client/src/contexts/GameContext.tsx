@@ -5,17 +5,14 @@ import React, {
   useCallback,
   createContext,
 } from "react";
-import { GameHandler } from "../events/GameHandler";
+import { GameHandler, GameState } from "../events/GameHandler";
 
-export interface GameState {
-  gameId: string | null;
-  timestamp: string | null;
-}
 
 interface GameContextType {
   state: GameState;
   createGame: () => void;
   joinGame: (gameId: string) => void;
+  startGame: (gameId: string) => void;
   isReady: boolean;
 }
 
@@ -25,6 +22,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>({
     gameId: null,
     timestamp: null,
+    currentPlayers: 0,
+    maxPlayers: 2,
+    isStarted: false,
+    canStart: false,
+    players: [],
   });
   const [isReady, setIsReady] = useState(false);
 
@@ -56,12 +58,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [isReady]
   );
 
+  const startGame = useCallback(
+    (gameId: string) => {
+      if (!isReady || !gameHandler.current) return;
+      gameHandler.current.startGame(gameId);
+    },
+    [isReady]
+  );
+
   return (
     <GameContext.Provider
       value={{
         state,
         createGame,
         joinGame,
+        startGame,
         isReady,
       }}
     >

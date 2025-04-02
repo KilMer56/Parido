@@ -2,7 +2,6 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
   color: #213547;
   background-color: #ffffff;
   font-synthesis: none;
@@ -171,24 +170,23 @@ button {
 }
 
 .status-card {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  min-width: 120px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
 .status-card h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  color: #666;
+  margin: 0 0 1rem;
+  color: #2c3e50;
+  font-size: 1.2rem;
 }
 
 .status-value {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
+  margin: 0 0 1rem;
+  color: #34495e;
+  font-size: 1.1rem;
 }
 
 .game-board {
@@ -276,91 +274,62 @@ button {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #ffffff;
-    background-color: #1a1a1a;
-  }
+.start-game-button {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 0.8em 1.6em;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
-  .container {
-    background: rgba(30, 30, 30, 0.9);
-  }
+.start-game-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
 
-  h1 {
-    color: #ecf0f1;
-  }
+.start-game-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
 
-  .description {
-    color: #bdc3c7;
-  }
+.player-list {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
 
-  .join-input {
-    background-color: #2c3e50;
-    border-color: #34495e;
-    color: #ecf0f1;
-  }
+.player-list h4 {
+  margin: 0 0 0.8rem;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
 
-  .join-input:focus {
-    border-color: #3498db;
-  }
+.player-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
-  .game-container {
-    background: rgba(30, 30, 30, 0.9);
-  }
+.player-list li {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  color: #34495e;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
 
-  .game-header {
-    border-bottom-color: #34495e;
-  }
-
-  .game-timestamp {
-    color: #bdc3c7;
-  }
-
-  .status-card {
-    background: #2c3e50;
-  }
-
-  .status-card h3 {
-    color: #bdc3c7;
-  }
-
-  .status-value {
-    color: #ecf0f1;
-  }
-
-  .game-board {
-    background: #2c3e50;
-  }
-
-  .board-placeholder {
-    color: #bdc3c7;
-  }
-
-  .error-message {
-    background-color: #7f1d1d;
-    color: #fecaca;
-    border-color: #991b1b;
-  }
-
-  .notification {
-    background: #1f2937;
-  }
-
-  .notification.error {
-    background-color: #7f1d1d;
-    color: #fecaca;
-    border-color: #991b1b;
-  }
-
-  .notification.success {
-    background-color: #166534;
-    color: #bbf7d0;
-    border-color: #15803d;
-  }
-
-  .notification.info {
-    background-color: #1e40af;
-    color: #bfdbfe;
-    border-color: #1e3a8a;
-  }
+.player-list li:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateX(4px);
 }
