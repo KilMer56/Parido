@@ -12,7 +12,6 @@ export function GameBoard() {
   );
 
   const handleBid = () => {
-    // Handle bid action
     dispatch(placeBid(1, 2));
   };
 
@@ -24,7 +23,6 @@ export function GameBoard() {
     <div className="game-board">
       <h3>Game Board</h3>
       <div className="players-container">
-        {/* Current player */}
         <div className="player-board current-player">
           <h4>
             {currentPlayer.name}
@@ -39,7 +37,6 @@ export function GameBoard() {
           </div>
         </div>
 
-        {/* Other players */}
         {otherPlayers.map((player: Player) => (
           <div key={player.id} className="player-board">
             <h4>{player.name}</h4>
@@ -53,11 +50,32 @@ export function GameBoard() {
           </div>
         ))}
       </div>
+      {state.currentBid && (
+        <div className="bid-container">
+          <h4>Current Bid</h4>
+          <div className="bid">
+            <span className="bid-quantity">{state.currentBid.quantity}</span>
+            <span className="bid-value">{state.currentBid.value}</span>
+          </div>
+        </div>
+      )}
+      Active Player: {state.activePlayerSocketId}
+      <br />
+      Current Player: {state.currentPlayerSocketId}
       <div className="actions-container">
-        <button className="action bid-button" onClick={handleBid}>
+        <button
+          className="action bid-button"
+          onClick={handleBid}
+          disabled={state.currentPlayerSocketId !== state.activePlayerSocketId}
+        >
           Bid
         </button>
-        <button className="action challenge-button">Challenge</button>
+        <button
+          className="action challenge-button"
+          disabled={state.currentPlayerSocketId !== state.activePlayerSocketId}
+        >
+          Challenge
+        </button>
       </div>
     </div>
   );

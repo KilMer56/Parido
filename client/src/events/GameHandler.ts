@@ -82,25 +82,54 @@ export class GameHandler {
           const data = args[0] as {
             timestamp: string;
             players: Player[];
+            currentPlayerId: string;
           };
           Logger.info("Game started:", data);
 
           this.game.setTimestamp(data.timestamp);
           this.game.setPlayers(data.players);
           this.game.setStatus("in_progress");
+          const activePlayerSocketId = this.game.getPlayerById(
+            data.currentPlayerId
+          )?.socketId;
+          Logger.debug(
+            "Active player socket ID:",
+            activePlayerSocketId,
+            "Current player socket ID:",
+            this.game.getCurrentPlayerSocketId()
+          );
+          if (activePlayerSocketId) {
+            this.game.setActivePlayerSocketId(activePlayerSocketId);
+          } else {
+            Logger.error("Active player not found:", data.currentPlayerId);
+          }
         },
       },
       {
         name: "bidPlaced",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
-            playerId: number;
+            playerId: string;
             dieQuantity: number;
             dieValue: number;
-            nextPlayerId: number;
+            nextPlayerId: string;
           };
 
           Logger.info("Bid placed:", data);
+          const nextPlayerSocketId = this.game.getPlayerById(
+            data.nextPlayerId
+          )?.socketId;
+          if (nextPlayerSocketId) {
+            Logger.debug(
+              "Next player socket ID:",
+              nextPlayerSocketId,
+              "Current player socket ID:",
+              this.game.getCurrentPlayerSocketId()
+            );
+            this.game.setActivePlayerSocketId(nextPlayerSocketId);
+          } else {
+            Logger.error("Next player not found:", data.nextPlayerId);
+          }
 
           // const player = this.game.getPlayer(data.playerId);
           // if (player) {

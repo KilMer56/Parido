@@ -86,6 +86,10 @@ class GameHandler extends BaseEventHandler {
                 socketId: player.getSocketId(),
                 hand: player.getHand(),
               })),
+              currentPlayerId: game
+                .getCurrentRound()
+                ?.getActivePlayer()
+                .getId(),
             };
             game.getId() &&
               socket.to(game.getId()).emit("gameStarted", gameData);
@@ -161,6 +165,12 @@ class GameHandler extends BaseEventHandler {
                   const nextPlayer = game.getNextPlayer(player);
                   round.setActivePlayer(nextPlayer);
                   socket.to(gameId).emit("bidPlaced", {
+                    playerId: player.getId(),
+                    diceNumber: dieQuantity,
+                    diceValue: dieValue,
+                    nextPlayerId: nextPlayer.getId(),
+                  });
+                  socket.emit("bidPlaced", {
                     playerId: player.getId(),
                     diceNumber: dieQuantity,
                     diceValue: dieValue,

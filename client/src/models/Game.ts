@@ -5,6 +5,11 @@ export interface Player {
   hand: number[];
 }
 
+export interface Bid {
+  quantity: number;
+  value: number;
+}
+
 export type GameStatus = "waiting" | "in_progress" | "finished";
 
 export interface GameState {
@@ -13,7 +18,9 @@ export interface GameState {
   maxPlayers: number;
   status: GameStatus;
   players: Player[];
-  currentPlayerSocketId: string | null;
+  currentPlayerSocketId?: string;
+  activePlayerSocketId?: string;
+  currentBid?: Bid;
 }
 
 export class Game {
@@ -27,17 +34,12 @@ export class Game {
       maxPlayers: 2,
       status: "waiting",
       players: [],
-      currentPlayerSocketId: null,
     };
   }
 
   constructor(updateState: (state: GameState) => void) {
     this.updateState = updateState;
     this.state = Game.createInitialState();
-  }
-
-  public getState(): GameState {
-    return { ...this.state };
   }
 
   public setState(partialState: Partial<GameState>): void {
@@ -72,16 +74,32 @@ export class Game {
     return this.state.players;
   }
 
+  public getPlayerById(playerId: string): Player | undefined {
+    return this.state.players.find((player) => player.id === playerId);
+  }
+
   public setCurrentPlayerSocketId(socketId: string): void {
     this.setState({ currentPlayerSocketId: socketId });
   }
 
-  public getCurrentPlayerSocketId(): string | null {
+  public setActivePlayerSocketId(socketId: string): void {
+    this.setState({ activePlayerSocketId: socketId });
+  }
+
+  public getCurrentPlayerSocketId(): string | undefined {
     return this.state.currentPlayerSocketId;
   }
 
-  public isCurrentPlayer(socketId: string): boolean {
-    return this.state.currentPlayerSocketId === socketId;
+  public getActivePlayerSocketId(): string | undefined {
+    return this.state.activePlayerSocketId;
+  }
+
+  public isCurrentPlayerActive(): boolean {
+    return this.state.currentPlayerSocketId === this.state.activePlayerSocketId;
+  }
+
+  public setCurrentBid(bid: Bid): void {
+    this.setState({ currentBid: bid });
   }
 
   public canStart(): boolean {

@@ -78,3 +78,9 @@
     transform: scale(1.1);
     cursor: pointer;
 }
+
+.actions-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
