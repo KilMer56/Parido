@@ -8,6 +8,7 @@ import React, {
 import { GameHandler } from "../events/GameHandler";
 import { GameState, createInitialGameState } from "../types/game";
 import { GameAction } from "../types/actions";
+import { Game } from "../models/Game";
 
 interface GameContextType {
   state: GameState;
@@ -21,9 +22,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>(createInitialGameState());
   const [isReady, setIsReady] = useState(false);
   const gameHandler = useRef<GameHandler | null>(null);
+  const game = useRef<Game | null>(null);
 
   useEffect(() => {
-    gameHandler.current = new GameHandler(setState);
+    game.current = new Game(setState);
+    gameHandler.current = new GameHandler(game.current);
     setIsReady(true);
 
     return () => {
@@ -31,6 +34,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         gameHandler.current.cleanup();
         gameHandler.current = null;
       }
+      game.current = null;
     };
   }, []);
 
@@ -43,16 +47,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           gameHandler.current.createGame();
           break;
         case "join":
-          gameHandler.current.joinGame(action.payload);
+          gameHandler.current.joinGame(action.payload as string);
           break;
         case "start":
-          gameHandler.current.startGame(action.payload);
+          gameHandler.current.startGame(action.payload as string);
           break;
         case "leave":
-          // Handle leave game logic
-          break;
-        case "update":
-          setState((prev) => ({ ...prev, ...action.payload }));
+          gameHandler.current.leaveGame();
           break;
       }
     },

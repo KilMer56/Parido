@@ -1,32 +1,32 @@
 import { Socket } from "socket.io-client";
 import { SocketEvent, SocketManager } from "./SocketManager";
-import { Dispatch, SetStateAction } from "react";
 import Logger from "../utils/logger";
-import { GameState, Player } from "../types/game";
+import { Player } from "../types/game";
+import { Game } from "../models/Game";
 
 export class GameHandler {
   private socketManager: SocketManager;
   private events: SocketEvent[];
-  private updateGameState: Dispatch<SetStateAction<GameState>>;
+  private game: Game;
 
-  constructor(updateGameState: Dispatch<SetStateAction<GameState>>) {
+  constructor(game: Game) {
     this.socketManager = SocketManager.getInstance();
-    this.updateGameState = updateGameState;
+    this.game = game;
 
     this.events = [
       {
         name: "gameCreated",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const game = args[0] as { gameId: string; timestamp: string; maxPlayers: number };
+          const game = args[0] as {
+            gameId: string;
+            timestamp: string;
+            maxPlayers: number;
+          };
           Logger.info("Game created:", game);
 
-          this.updateGameState({
-            gameId: game.gameId,
-            timestamp: game.timestamp,
-            maxPlayers: game.maxPlayers,
-            players: [],
-            status: 'waiting',
-          });
+          this.game.setGameId(game.gameId);
+          this.game.setTimestamp(game.timestamp);
+          this.game.setState({ maxPlayers: game.maxPlayers });
         },
       },
       {
@@ -40,13 +40,10 @@ export class GameHandler {
           };
           Logger.info("Game joined:", game);
 
-          this.updateGameState({
-            gameId: game.gameId,
-            timestamp: game.timestamp,
-            maxPlayers: game.maxPlayers,
-            players: game.players,
-            status: 'waiting',
-          });
+          this.game.setGameId(game.gameId);
+          this.game.setTimestamp(game.timestamp);
+          this.game.setPlayers(game.players);
+          this.game.setState({ maxPlayers: game.maxPlayers });
         },
       },
       {
@@ -55,11 +52,8 @@ export class GameHandler {
           const data = args[0] as { players: Player[]; maxPlayers: number };
           Logger.info("Player joined:", data);
 
-          this.updateGameState((prev) => ({
-            ...prev,
-            players: data.players,
-            maxPlayers: data.maxPlayers,
-          }));
+          this.game.setPlayers(data.players);
+          this.game.setState({ maxPlayers: data.maxPlayers });
         },
       },
       {
@@ -68,12 +62,8 @@ export class GameHandler {
           const data = args[0] as { timestamp: string };
           Logger.info("Game started:", data);
 
-          this.updateGameState((prev) => ({
-            ...prev,
-            isStarted: true,
-            timestamp: data.timestamp,
-            canStart: false,
-          }));
+          this.game.setTimestamp(data.timestamp);
+          this.game.setStatus("in_progress");
         },
       },
     ];
@@ -96,8 +86,15 @@ export class GameHandler {
   }
 
   public startGame(gameId: string): void {
-    Logger.info("Starting game:", gameId);
-    this.socketManager.emit("startGame", gameId);
+    if (this.game.canStart()) {
+      Logger.info("Starting game:", gameId);
+      this.socketManager.emit("startGame", gameId);
+    }
+  }
+
+  public leaveGame(): void {
+    Logger.info("Leaving game");
+    this.game.reset();
   }
 }
 
