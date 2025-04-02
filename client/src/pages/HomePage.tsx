@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame, GameProvider } from "../contexts/GameContext";
+import { createGame } from "../types/actions";
 
 function HomeContent() {
-  const { createGame, state } = useGame();
+  const { dispatch, state } = useGame();
   const [gameId, setGameId] = useState("");
   const navigate = useNavigate();
 
@@ -28,9 +29,9 @@ function HomeContent() {
         A fast-paced multiplayer game where players compete in real-time. 
         Create a new game or join an existing one to start playing!
       </p>
-      <button className="create-game" onClick={createGame}>
-          Create Game
-        </button>
+      <button className="create-game" onClick={() => dispatch(createGame())}>
+        Create Game
+      </button>
       <form onSubmit={handleJoinGame} className="join-form">
         <input
           id="join-game-input"

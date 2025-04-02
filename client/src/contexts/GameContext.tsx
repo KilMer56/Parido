@@ -7,12 +7,11 @@ import React, {
 } from "react";
 import { GameHandler } from "../events/GameHandler";
 import { GameState, createInitialGameState } from "../types/game";
+import { GameAction } from "../types/actions";
 
 interface GameContextType {
   state: GameState;
-  createGame: () => void;
-  joinGame: (gameId: string) => void;
-  startGame: (gameId: string) => void;
+  dispatch: (action: GameAction) => void;
   isReady: boolean;
 }
 
@@ -21,10 +20,8 @@ export const GameContext = createContext<GameContextType | null>(null);
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>(createInitialGameState());
   const [isReady, setIsReady] = useState(false);
-
   const gameHandler = useRef<GameHandler | null>(null);
 
-  // Initialize game handler once
   useEffect(() => {
     gameHandler.current = new GameHandler(setState);
     setIsReady(true);
@@ -37,23 +34,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const createGame = useCallback(() => {
-    if (!isReady || !gameHandler.current) return;
-    gameHandler.current.createGame();
-  }, [isReady]);
-
-  const joinGame = useCallback(
-    (gameId: string) => {
+  const dispatch = useCallback(
+    (action: GameAction) => {
       if (!isReady || !gameHandler.current) return;
-      gameHandler.current.joinGame(gameId);
-    },
-    [isReady]
-  );
 
-  const startGame = useCallback(
-    (gameId: string) => {
-      if (!isReady || !gameHandler.current) return;
-      gameHandler.current.startGame(gameId);
+      switch (action.type) {
+        case "create":
+          gameHandler.current.createGame();
+          break;
+        case "join":
+          gameHandler.current.joinGame(action.payload);
+          break;
+        case "start":
+          gameHandler.current.startGame(action.payload);
+          break;
+        case "leave":
+          // Handle leave game logic
+          break;
+        case "update":
+          setState((prev) => ({ ...prev, ...action.payload }));
+          break;
+      }
     },
     [isReady]
   );
@@ -62,9 +63,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     <GameContext.Provider
       value={{
         state,
-        createGame,
-        joinGame,
-        startGame,
+        dispatch,
         isReady,
       }}
     >

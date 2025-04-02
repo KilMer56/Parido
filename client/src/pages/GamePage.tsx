@@ -2,26 +2,28 @@ import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, GameProvider } from "../contexts/GameContext";
 import { Player, canStartGame, getStatusText } from "../types/game";
+import { joinGame, startGame, leaveGame } from "../types/actions";
 
 function GameContent() {
-  const { state: gameState, joinGame, startGame } = useGame();
+  const { state: gameState, dispatch } = useGame();
   const { gameId: urlGameId } = useParams();
   const navigate = useNavigate();
 
   // Handle initial URL state
   useEffect(() => {
     if (urlGameId && !gameState.gameId) {
-      joinGame(urlGameId);
+      dispatch(joinGame(urlGameId));
     }
-  }, [urlGameId, gameState.gameId, joinGame]);
+  }, [urlGameId, gameState.gameId, dispatch]);
 
   const handleLeaveGame = () => {
+    dispatch(leaveGame());
     navigate("/");
   };
 
   const handleStartGame = () => {
     if (gameState.gameId) {
-      startGame(gameState.gameId);
+      dispatch(startGame(gameState.gameId));
     }
   };
 
