@@ -34,11 +34,11 @@ class GameManager {
     return this.gamesByGameId;
   }
 
-  public addPlayerToGame(gameId: string): boolean {
+  public addPlayerToGame(gameId: string, socketId: string): boolean {
     const game = this.getGame(gameId);
 
     if (game) {
-      const player = new Player();
+      const player = new Player(socketId);
       game.addPlayer(player);
       return true;
     }

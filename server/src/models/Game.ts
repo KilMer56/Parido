@@ -30,8 +30,8 @@ export class Game {
     return false;
   }
 
-  removePlayer(playerId: string) {
-    this.players = this.players.filter((player) => player.getId() !== playerId);
+  removePlayer(player: Player) {
+    this.players = this.players.filter((p) => p.getId() !== player.getId());
   }
 
   start() {

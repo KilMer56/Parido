@@ -23,14 +23,15 @@ function GameContent() {
 
   const handleStartGame = () => {
     if (gameState.gameId) {
-      dispatch(startGame(gameState.gameId));
+      dispatch(startGame());
     }
   };
 
-  const canStart = gameState.status === 'waiting' && gameState.players.length > 1;
+  const canStart =
+    gameState.status === "waiting" && gameState.players.length > 1;
   const getStatusText = () => {
-    return gameState.status === 'in_progress' 
-      ? 'Game in progress' 
+    return gameState.status === "in_progress"
+      ? "Game in progress"
       : `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`;
   };
 

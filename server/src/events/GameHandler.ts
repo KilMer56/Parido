@@ -31,7 +31,7 @@ class GameHandler extends BaseEventHandler {
 
         const game = gameManager.getGame(gameId);
         if (game) {
-          if (game.addPlayer(new Player())) {
+          if (game.addPlayer(new Player(socket.id))) {
             socket.join(gameId);
             socket.emit("gameJoined", {
               gameId: game.getId(),
@@ -94,6 +94,40 @@ class GameHandler extends BaseEventHandler {
         } else {
           socket.emit("error", { message: "Game not found" });
           Logger.error("Game not found:", gameId);
+        }
+      },
+    },
+    {
+      name: "leaveGame",
+      handler: (socket: Socket, gameId: string) => {
+        Logger.info("Client leaving game:", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          // Remove the player from the game
+          const player = game
+            .getPlayers()
+            .find((p) => p.getSocketId() === socket.id);
+          if (player) {
+            game.removePlayer(player);
+
+            // Notify other players about the player leaving
+            socket.to(gameId).emit("playerLeft", {
+              playerId: player.getId(),
+              players: game.getPlayers().map((player) => ({
+                id: player.getId(),
+                name: player.getName(),
+              })),
+              maxPlayers: game.getMaxPlayers(),
+            });
+
+            // If no players left, remove the game
+            if (game.getPlayers().length === 0) {
+              gameManager.removeGame(gameId);
+            }
+
+            Logger.info("Player left game:", gameId);
+          }
         }
       },
     },

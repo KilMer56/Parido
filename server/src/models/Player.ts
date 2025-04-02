@@ -5,11 +5,13 @@ export class Player {
   private id: string;
   private name: string;
   private dices: Dice[];
+  private socketId: string;
 
-  constructor() {
+  constructor(socketId: string) {
     this.id = randomId();
     this.name = `Player ${this.id.slice(0, 4)}`;
     this.dices = [];
+    this.socketId = socketId;
   }
 
   public rollDices() {
@@ -22,6 +24,10 @@ export class Player {
 
   public getName(): string {
     return this.name;
+  }
+
+  public getSocketId(): string {
+    return this.socketId;
   }
 }
 

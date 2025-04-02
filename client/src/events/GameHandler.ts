@@ -56,6 +56,19 @@ export class GameHandler {
         },
       },
       {
+        name: "playerLeft",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            playerId: number;
+            players: Player[];
+            maxPlayers: number;
+          };
+          Logger.info("Player left:", data);
+
+          this.game.setPlayers(data.players);
+        },
+      },
+      {
         name: "gameStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as { timestamp: string };
@@ -84,16 +97,16 @@ export class GameHandler {
     this.socketManager.emit("joinGame", gameId);
   }
 
-  public startGame(gameId: string): void {
+  public startGame(): void {
     if (this.game.canStart()) {
-      Logger.info("Starting game:", gameId);
-      this.socketManager.emit("startGame", gameId);
+      Logger.info("Starting game:", this.game.getGameId());
+      this.socketManager.emit("startGame", this.game.getGameId());
     }
   }
 
   public leaveGame(): void {
     Logger.info("Leaving game");
-    this.game.reset();
+    this.socketManager.emit("leaveGame", this.game.getGameId());
   }
 }
 

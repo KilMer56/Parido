@@ -49,7 +49,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           gameHandler.current.joinGame(action.payload as string);
           break;
         case "start":
-          gameHandler.current.startGame(action.payload as string);
+          gameHandler.current.startGame();
           break;
         case "leave":
           gameHandler.current.leaveGame();

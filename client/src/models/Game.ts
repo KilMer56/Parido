@@ -48,6 +48,10 @@ export class Game {
     this.setState({ gameId });
   }
 
+  public getGameId(): string | null {
+    return this.state.gameId;
+  }
+
   public setTimestamp(timestamp: string): void {
     this.setState({ timestamp });
   }
