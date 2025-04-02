@@ -2,20 +2,7 @@ import { Socket } from "socket.io-client";
 import { SocketEvent, SocketManager } from "./SocketManager";
 import { Dispatch, SetStateAction } from "react";
 import Logger from "../utils/logger";
-
-interface Player {
-  id: string;
-  name: string;
-}
-
-export interface GameState {
-  gameId: string | null;
-  timestamp: string | null;
-  maxPlayers: number;
-  isStarted: boolean;
-  canStart: boolean;
-  players: Player[];
-}
+import { GameState, Player } from "../types/game";
 
 export class GameHandler {
   private socketManager: SocketManager;
@@ -30,20 +17,15 @@ export class GameHandler {
       {
         name: "gameCreated",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const game = args[0] as {
-            gameId: string;
-            timestamp: string;
-            maxPlayers: number;
-          };
+          const game = args[0] as { gameId: string; timestamp: string; maxPlayers: number };
           Logger.info("Game created:", game);
 
           this.updateGameState({
             gameId: game.gameId,
             timestamp: game.timestamp,
             maxPlayers: game.maxPlayers,
-            isStarted: false,
-            canStart: false,
             players: [],
+            status: 'waiting',
           });
         },
       },
@@ -62,9 +44,8 @@ export class GameHandler {
             gameId: game.gameId,
             timestamp: game.timestamp,
             maxPlayers: game.maxPlayers,
-            isStarted: false,
-            canStart: game.players.length > 1,
             players: game.players,
+            status: 'waiting',
           });
         },
       },
@@ -78,7 +59,6 @@ export class GameHandler {
             ...prev,
             players: data.players,
             maxPlayers: data.maxPlayers,
-            canStart: data.players.length > 1,
           }));
         },
       },

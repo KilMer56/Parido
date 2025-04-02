@@ -1,11 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGame, GameProvider } from "../contexts/GameContext";
-
-interface Player {
-  id: string;
-  name: string;
-}
+import { Player, canStartGame, getStatusText } from "../types/game";
 
 function GameContent() {
   const { state: gameState, joinGame, startGame } = useGame();
@@ -50,12 +46,8 @@ function GameContent() {
         <div className="game-status">
           <div className="status-card">
             <h3>Status</h3>
-            <p className="status-value">
-              {gameState.isStarted
-                ? "Game in progress"
-                : `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`}
-            </p>
-            {!gameState.isStarted && gameState.canStart && (
+            <p className="status-value">{getStatusText(gameState)}</p>
+            {canStartGame(gameState) && (
               <button className="start-game-button" onClick={handleStartGame}>
                 Start Game
               </button>
