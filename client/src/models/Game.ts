@@ -1,6 +1,8 @@
 export interface Player {
   id: string;
   name: string;
+  socketId: string;
+  dices: number[];
 }
 
 export type GameStatus = 'waiting' | 'in_progress' | 'finished';

@@ -10,7 +10,7 @@ export class Player {
   constructor(socketId: string) {
     this.id = randomId();
     this.name = `Player ${this.id.slice(0, 4)}`;
-    this.dices = [];
+    this.dices = Array(5).fill(null).map(() => new Dice());
     this.socketId = socketId;
   }
 
@@ -28,6 +28,10 @@ export class Player {
 
   public getSocketId(): string {
     return this.socketId;
+  }
+
+  public getDices(): Dice[] {
+    return this.dices;
   }
 }
 

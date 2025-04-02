@@ -39,6 +39,7 @@ class GameHandler extends BaseEventHandler {
               players: game.getPlayers().map((player) => ({
                 id: player.getId(),
                 name: player.getName(),
+                socketId: player.getSocketId(),
               })),
               maxPlayers: game.getMaxPlayers(),
             });
@@ -49,6 +50,7 @@ class GameHandler extends BaseEventHandler {
                 players: game.getPlayers().map((player) => ({
                   id: player.getId(),
                   name: player.getName(),
+                  socketId: player.getSocketId(),
                 })),
                 maxPlayers: game.getMaxPlayers(),
               });
@@ -73,17 +75,20 @@ class GameHandler extends BaseEventHandler {
 
         const game = gameManager.getGame(gameId);
         if (game) {
-          if (game.canStart()) {
-            if (game.start()) {
-              game.getId() &&
-                socket.to(game.getId()).emit("gameStarted", {
-                  timestamp: getCurrentDatetime(),
-                });
-              socket.emit("gameStarted", {
-                timestamp: getCurrentDatetime(),
-              });
-              Logger.info("Game started:", gameId);
-            }
+          if (game.start()) {
+            const gameData = {
+              timestamp: getCurrentDatetime(),
+              players: game.getPlayers().map((player) => ({
+                id: player.getId(),
+                name: player.getName(),
+                socketId: player.getSocketId(),
+                dices: player.getDices().map(dice => dice.getValue())
+              }))
+            };
+            game.getId() &&
+              socket.to(game.getId()).emit("gameStarted", gameData);
+            socket.emit("gameStarted", gameData);
+            Logger.info("Game started:", gameId);
           } else {
             socket.emit("error", {
               message:
@@ -117,6 +122,7 @@ class GameHandler extends BaseEventHandler {
               players: game.getPlayers().map((player) => ({
                 id: player.getId(),
                 name: player.getName(),
+                socketId: player.getSocketId(),
               })),
               maxPlayers: game.getMaxPlayers(),
             });

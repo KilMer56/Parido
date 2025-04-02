@@ -71,10 +71,14 @@ export class GameHandler {
       {
         name: "gameStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const data = args[0] as { timestamp: string };
+          const data = args[0] as { 
+            timestamp: string;
+            players: Player[];
+          };
           Logger.info("Game started:", data);
 
           this.game.setTimestamp(data.timestamp);
+          this.game.setPlayers(data.players);
           this.game.setStatus("in_progress");
         },
       },
