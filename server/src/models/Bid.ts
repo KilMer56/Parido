@@ -1,16 +1,17 @@
 import { randomId } from "../utils/random";
+import { Player } from "./Player";
 
 export class Bid {
   private id: string;
+  private player: Player;
   private quantity: number;
   private value: number;
-  private playerId: string;
 
-  constructor(quantity: number, value: number, playerId: string) {
+  constructor(player: Player, quantity: number, value: number) {
     this.id = randomId();
+    this.player = player;
     this.quantity = quantity;
     this.value = value;
-    this.playerId = playerId;
   }
 
   public getId(): string {
@@ -25,7 +26,7 @@ export class Bid {
     return this.value;
   }
 
-  public getPlayerId(): string {
-    return this.playerId;
+  public getPlayer(): Player {
+    return this.player;
   }
-} 
+}

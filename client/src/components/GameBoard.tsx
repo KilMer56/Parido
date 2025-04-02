@@ -1,14 +1,20 @@
 import { Player } from "../models/Game";
 import { useGame } from "../contexts/GameContext";
+import { placeBid } from "../types/actions";
 
 export function GameBoard() {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const currentPlayer = state.players.find(
     (player) => player.socketId === state.currentPlayerSocketId
   );
   const otherPlayers = state.players.filter(
     (player) => player.socketId !== state.currentPlayerSocketId
   );
+
+  const handleBid = () => {
+    // Handle bid action
+    dispatch(placeBid(1, 2));
+  };
 
   if (!currentPlayer) {
     return <div>Loading...</div>;
@@ -46,6 +52,12 @@ export function GameBoard() {
             </div>
           </div>
         ))}
+      </div>
+      <div className="actions-container">
+        <button className="action bid-button" onClick={handleBid}>
+          Bid
+        </button>
+        <button className="action challenge-button">Challenge</button>
       </div>
     </div>
   );

@@ -68,6 +68,10 @@ export class Game {
     this.setState({ players });
   }
 
+  public getPlayers(): Player[] {
+    return this.state.players;
+  }
+
   public setCurrentPlayerSocketId(socketId: string): void {
     this.setState({ currentPlayerSocketId: socketId });
   }
@@ -80,43 +84,8 @@ export class Game {
     return this.state.currentPlayerSocketId === socketId;
   }
 
-  public addPlayer(player: Player): void {
-    this.setState({
-      players: [...this.state.players, player],
-    });
-  }
-
-  public removePlayer(playerId: string): void {
-    this.setState({
-      players: this.state.players.filter((p) => p.id !== playerId),
-    });
-  }
-
   public canStart(): boolean {
     return this.state.status === "waiting" && this.state.players.length > 1;
   }
-
-  public isFull(): boolean {
-    return this.state.players.length >= this.state.maxPlayers;
-  }
-
-  public hasStarted(): boolean {
-    return this.state.status === "in_progress";
-  }
-
-  public reset(): void {
-    this.state = Game.createInitialState();
-    this.updateState(this.state);
-  }
-
-  // Game logic methods moved from types/game.ts
-  public getPlayerCountText(): string {
-    return `Waiting for players (${this.state.players.length}/${this.state.maxPlayers})`;
-  }
-
-  public getStatusText(): string {
-    return this.state.status === "in_progress"
-      ? "Game in progress"
-      : this.getPlayerCountText();
-  }
 }
+

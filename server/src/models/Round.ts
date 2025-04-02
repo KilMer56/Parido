@@ -13,6 +13,7 @@ export class Round {
   private number: number;
   private activePlayer: Player;
   private actions: (Bid | Challenge)[];
+  private lastBid: Bid | null;
   private winner: Player | null;
   private state: RoundState;
 
@@ -21,6 +22,7 @@ export class Round {
     this.number = number;
     this.activePlayer = activePlayer;
     this.actions = [];
+    this.lastBid = null;
     this.winner = null;
     this.state = RoundState.ACTIVE;
   }
@@ -54,6 +56,37 @@ export class Round {
     this.actions.push(action);
   }
 
+  public placeBid(quantity: number, value: number): Bid {
+    if (this.state !== RoundState.ACTIVE) {
+      throw new Error("Cannot place a bid when the round is not active.");
+    }
+    if (this.lastBid) {
+      if (quantity < this.lastBid.getQuantity()) {
+        throw new Error(
+          "Bid quandity must be higher than the last bid quantity."
+        );
+      }
+      if (
+        quantity === this.lastBid.getQuantity() &&
+        value <= this.lastBid.getValue()
+      ) {
+        throw new Error(
+          "Bid value must be higher than the last bid value when quantity are equals."
+        );
+      }
+    }
+    const bid = new Bid(this.activePlayer, quantity, value);
+    this.actions.push(bid);
+    this.lastBid = bid;
+    return bid;
+  }
+
+  public placeChallenge(bid: Bid, challenger: Player): Challenge {
+    const challenge = new Challenge(bid, challenger);
+    this.actions.push(challenge);
+    return challenge;
+  }
+
   public getWinner(): Player | null {
     return this.winner;
   }
@@ -71,3 +104,4 @@ export class Round {
     this.state = state;
   }
 }
+

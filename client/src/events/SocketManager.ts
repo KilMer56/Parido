@@ -107,8 +107,16 @@ export class SocketManager {
         name: "error",
         handler: (_socket, error) => {
           console.error("Socket error:", error);
-          this.isConnected = false;
-          this.showNotification("Socket error", "error");
+          if (
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            typeof error.message === "string"
+          ) {
+            this.showNotification(error.message, "error");
+          } else {
+            this.showNotification("An unknown error occurred", "error");
+          }
         },
       },
     ];

@@ -79,7 +79,7 @@ export class GameHandler {
       {
         name: "gameStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
-          const data = args[0] as { 
+          const data = args[0] as {
             timestamp: string;
             players: Player[];
           };
@@ -88,6 +88,24 @@ export class GameHandler {
           this.game.setTimestamp(data.timestamp);
           this.game.setPlayers(data.players);
           this.game.setStatus("in_progress");
+        },
+      },
+      {
+        name: "bidPlaced",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            playerId: number;
+            dieQuantity: number;
+            dieValue: number;
+            nextPlayerId: number;
+          };
+
+          Logger.info("Bid placed:", data);
+
+          // const player = this.game.getPlayer(data.playerId);
+          // if (player) {
+          //   player.setBid(data.dieQuantity, data.dieValue);
+          // }
         },
       },
     ];
@@ -119,6 +137,16 @@ export class GameHandler {
   public leaveGame(): void {
     Logger.info("Leaving game");
     this.socketManager.emit("leaveGame", this.game.getGameId());
+  }
+
+  public placeBid(dieQuantity: number, dieQalue: number): void {
+    Logger.info("Placing bid:", dieQuantity, dieQalue);
+    this.socketManager.emit(
+      "placeBid",
+      this.game.getGameId(),
+      dieQuantity,
+      dieQalue
+    );
   }
 }
 

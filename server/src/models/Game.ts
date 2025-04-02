@@ -98,6 +98,12 @@ export class Game {
     return this.maxPlayers;
   }
 
+  public getNextPlayer(player: Player) {
+    const currentIndex = this.players.indexOf(player);
+    const nextIndex = (currentIndex + 1) % this.players.length;
+    return this.players[nextIndex];
+  }
+
   public getStatus(): GameStatus {
     return this.status;
   }

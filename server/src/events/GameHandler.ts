@@ -58,13 +58,14 @@ class GameHandler extends BaseEventHandler {
 
             Logger.info("Player joined game:", gameId);
           } else {
-            socket.emit("error", {
-              message: "Game is full or has already started",
-            });
+            this.emitError(
+              socket,
+              new Error("Game is full or has already started")
+            );
             Logger.error("Game is full or has started:", gameId);
           }
         } else {
-          socket.emit("error", { message: "Game not found" });
+          this.emitError(socket, new Error("Game not found"));
           Logger.error("Game not found:", gameId);
         }
       },
@@ -91,14 +92,16 @@ class GameHandler extends BaseEventHandler {
             socket.emit("gameStarted", gameData);
             Logger.info("Game started:", gameId);
           } else {
-            socket.emit("error", {
-              message:
-                "Cannot start game: not enough players or game already started",
-            });
+            this.emitError(
+              socket,
+              new Error(
+                "Cannot start game: not enough players or game already started"
+              )
+            );
             Logger.error("Cannot start game:", gameId);
           }
         } else {
-          socket.emit("error", { message: "Game not found" });
+          this.emitError(socket, new Error("Game not found"));
           Logger.error("Game not found:", gameId);
         }
       },
@@ -137,12 +140,12 @@ class GameHandler extends BaseEventHandler {
       },
     },
     {
-      name: "bid",
+      name: "placeBid",
       handler: (
         socket: Socket,
         gameId: string,
-        diceNumber: number,
-        diceValue: number
+        dieQuantity: number,
+        dieValue: number
       ) => {
         Logger.info("Client bidding in game:", gameId);
 
@@ -150,27 +153,51 @@ class GameHandler extends BaseEventHandler {
         if (game) {
           const player = game.getPlayerBySocketId(socket.id);
           if (player) {
-            // player.setBid(diceNumber, diceValue);
-            socket.to(gameId).emit("playerBid", {
-              playerId: player.getId(),
-              diceNumber,
-              diceValue,
-            });
-            Logger.info(
-              "Player bid:",
-              gameId,
-              player.getId(),
-              diceNumber,
-              diceValue
-            );
+            const round = game.getCurrentRound();
+            if (round) {
+              if (player.getId() === round.getActivePlayer().getId()) {
+                try {
+                  round.placeBid(dieQuantity, dieValue);
+                  const nextPlayer = game.getNextPlayer(player);
+                  round.setActivePlayer(nextPlayer);
+                  socket.to(gameId).emit("bidPlaced", {
+                    playerId: player.getId(),
+                    diceNumber: dieQuantity,
+                    diceValue: dieValue,
+                    nextPlayerId: nextPlayer.getId(),
+                  });
+                } catch (error) {
+                  this.emitError(socket, error);
+                  Logger.error("Bid error:", error);
+                }
+              } else {
+                this.emitError(socket, new Error("It's not your turn to bid"));
+                Logger.error("Not your turn to bid:", gameId);
+                return;
+              }
+            } else {
+              this.emitError(socket, new Error("Round not found"));
+              Logger.error("Round not found:", gameId);
+            }
+          } else {
+            this.emitError(socket, new Error("Player not found"));
+            Logger.error("Player not found:", socket.id);
           }
         } else {
-          socket.emit("error", { message: "Game not found" });
+          this.emitError(socket, new Error("Game not found"));
           Logger.error("Game not found:", gameId);
         }
       },
     },
   ];
+
+  private emitError(socket: Socket, error: unknown) {
+    if (error instanceof Error) {
+      socket.emit("error", { name: error.name, message: error.message });
+    } else {
+      socket.emit("error", { message: "An unknown error occurred" });
+    }
+  }
 }
 
 export const gameHandler = new GameHandler();
