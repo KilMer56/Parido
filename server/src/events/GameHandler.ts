@@ -31,7 +31,8 @@ class GameHandler extends BaseEventHandler {
 
         const game = gameManager.getGame(gameId);
         if (game) {
-          if (game.addPlayer(new Player(socket.id))) {
+          // Todo: pass name
+          if (game.addPlayer(new Player(socket.id, "Guest"))) {
             socket.join(gameId);
             socket.emit("gameJoined", {
               gameId: game.getId(),
@@ -82,8 +83,8 @@ class GameHandler extends BaseEventHandler {
                 id: player.getId(),
                 name: player.getName(),
                 socketId: player.getSocketId(),
-                dices: player.getDices().map(dice => dice.getValue())
-              }))
+                hand: player.getHand(),
+              })),
             };
             game.getId() &&
               socket.to(game.getId()).emit("gameStarted", gameData);
@@ -110,9 +111,7 @@ class GameHandler extends BaseEventHandler {
         const game = gameManager.getGame(gameId);
         if (game) {
           // Remove the player from the game
-          const player = game
-            .getPlayers()
-            .find((p) => p.getSocketId() === socket.id);
+          const player = game.getPlayerBySocketId(socket.id);
           if (player) {
             game.removePlayer(player);
 
@@ -134,6 +133,40 @@ class GameHandler extends BaseEventHandler {
 
             Logger.info("Player left game:", gameId);
           }
+        }
+      },
+    },
+    {
+      name: "bid",
+      handler: (
+        socket: Socket,
+        gameId: string,
+        diceNumber: number,
+        diceValue: number
+      ) => {
+        Logger.info("Client bidding in game:", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          const player = game.getPlayerBySocketId(socket.id);
+          if (player) {
+            // player.setBid(diceNumber, diceValue);
+            socket.to(gameId).emit("playerBid", {
+              playerId: player.getId(),
+              diceNumber,
+              diceValue,
+            });
+            Logger.info(
+              "Player bid:",
+              gameId,
+              player.getId(),
+              diceNumber,
+              diceValue
+            );
+          }
+        } else {
+          socket.emit("error", { message: "Game not found" });
+          Logger.error("Game not found:", gameId);
         }
       },
     },

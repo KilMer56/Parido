@@ -2,10 +2,10 @@ export interface Player {
   id: string;
   name: string;
   socketId: string;
-  dices: number[];
+  hand: number[];
 }
 
-export type GameStatus = 'waiting' | 'in_progress' | 'finished';
+export type GameStatus = "waiting" | "in_progress" | "finished";
 
 export interface GameState {
   gameId: string | null;
@@ -25,7 +25,7 @@ export class Game {
       gameId: null,
       timestamp: null,
       maxPlayers: 2,
-      status: 'waiting',
+      status: "waiting",
       players: [],
       currentPlayerSocketId: null,
     };
@@ -93,7 +93,7 @@ export class Game {
   }
 
   public canStart(): boolean {
-    return this.state.status === 'waiting' && this.state.players.length > 1;
+    return this.state.status === "waiting" && this.state.players.length > 1;
   }
 
   public isFull(): boolean {
@@ -101,7 +101,7 @@ export class Game {
   }
 
   public hasStarted(): boolean {
-    return this.state.status === 'in_progress';
+    return this.state.status === "in_progress";
   }
 
   public reset(): void {
@@ -115,6 +115,8 @@ export class Game {
   }
 
   public getStatusText(): string {
-    return this.state.status === 'in_progress' ? 'Game in progress' : this.getPlayerCountText();
+    return this.state.status === "in_progress"
+      ? "Game in progress"
+      : this.getPlayerCountText();
   }
-} 
+}

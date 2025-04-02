@@ -34,14 +34,11 @@ function GameContent() {
   const getStatusText = () => {
     if (gameState.status === "in_progress") {
       return "Game in progress";
-    }
-    else if (gameState.players.length === gameState.maxPlayers){
+    } else if (gameState.players.length === gameState.maxPlayers) {
       return `Lobby is full (${gameState.players.length}/${gameState.maxPlayers}), ready to start!`;
-    }
-    else if (gameState.players.length > 1){
+    } else if (gameState.players.length > 1) {
       return `Players (${gameState.players.length}/${gameState.maxPlayers}), waiting for game to start...`;
-    }
-    else{
+    } else {
       return `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`;
     }
   };
@@ -65,7 +62,7 @@ function GameContent() {
 
       <div className="game-content">
         {gameState.status === "in_progress" ? (
-          <GameBoard players={gameState.players} />
+          <GameBoard />
         ) : (
           <div className="game-lobby">
             <div className="lobby-card">

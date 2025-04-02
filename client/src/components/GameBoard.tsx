@@ -1,14 +1,14 @@
 import { Player } from "../models/Game";
 import { useGame } from "../contexts/GameContext";
 
-interface GameBoardProps {
-  players: Player[];
-}
-
-export function GameBoard({ players }: GameBoardProps) {
+export function GameBoard() {
   const { state } = useGame();
-  const currentPlayer = state.players.find(player => player.socketId === state.currentPlayerSocketId);
-  const otherPlayers = state.players.filter(player => player.socketId !== state.currentPlayerSocketId);
+  const currentPlayer = state.players.find(
+    (player) => player.socketId === state.currentPlayerSocketId
+  );
+  const otherPlayers = state.players.filter(
+    (player) => player.socketId !== state.currentPlayerSocketId
+  );
 
   if (!currentPlayer) {
     return <div>Loading...</div>;
@@ -25,7 +25,7 @@ export function GameBoard({ players }: GameBoardProps) {
             <span className="current-player-badge">(You)</span>
           </h4>
           <div className="dice-container">
-            {currentPlayer.dices.map((value: number, index: number) => (
+            {currentPlayer.hand.map((value: number, index: number) => (
               <div key={index} className="dice">
                 {value}
               </div>
@@ -38,9 +38,9 @@ export function GameBoard({ players }: GameBoardProps) {
           <div key={player.id} className="player-board">
             <h4>{player.name}</h4>
             <div className="dice-container">
-              {player.dices.map((value: number, index: number) => (
-                <div key={index} className="dice">
-                  {value}
+              {player.hand.map((_, index: number) => (
+                <div key={index} className="dice hidden">
+                  ?
                 </div>
               ))}
             </div>
@@ -49,4 +49,5 @@ export function GameBoard({ players }: GameBoardProps) {
       </div>
     </div>
   );
-} 
+}
+

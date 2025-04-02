@@ -1,5 +1,4 @@
 import { Game } from "./Game";
-import { Player } from "./Player";
 
 class GameManager {
   private static instance: GameManager;
@@ -32,17 +31,6 @@ class GameManager {
 
   public getAllGames(): Map<string, Game> {
     return this.gamesByGameId;
-  }
-
-  public addPlayerToGame(gameId: string, socketId: string): boolean {
-    const game = this.getGame(gameId);
-
-    if (game) {
-      const player = new Player(socketId);
-      game.addPlayer(player);
-      return true;
-    }
-    return false;
   }
 }
 

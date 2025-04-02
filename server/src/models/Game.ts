@@ -1,72 +1,117 @@
 import { randomId } from "../utils/random";
 import { Player } from "./Player";
+import { Round } from "./Round";
 
 export enum GameStatus {
   WAITING,
   ONGOING,
-  DONE,
+  FINISHED,
 }
 
 export class Game {
   private id: string;
   private players: Player[];
   private status: GameStatus;
-  private currentBid: number | null;
+  private currentRound: Round | null;
+  private rounds: Round[];
   private maxPlayers: number;
 
   constructor() {
     this.id = randomId();
     this.players = [];
     this.status = GameStatus.WAITING;
-    this.currentBid = null;
+    this.currentRound = null;
+    this.rounds = [];
     this.maxPlayers = 2;
   }
 
-  addPlayer(player: Player): boolean {
-    if (this.players.length < this.maxPlayers && this.status === GameStatus.WAITING) {
+  public addPlayer(player: Player): boolean {
+    if (
+      this.players.length < this.maxPlayers &&
+      this.status === GameStatus.WAITING
+    ) {
       this.players.push(player);
       return true;
     }
     return false;
   }
 
-  removePlayer(player: Player) {
+  public removePlayer(player: Player) {
     this.players = this.players.filter((p) => p.getId() !== player.getId());
   }
 
-  start() {
-    if (this.canStart()) {
+  public start() {
+    if (this.players.length > 1 && this.status === GameStatus.WAITING) {
       this.status = GameStatus.ONGOING;
-      this.players.forEach((player) => {
-        player.rollDices();
-      });
+      this.startNewRound();
       return true;
     }
     return false;
   }
 
-  canStart(): boolean {
-    return this.players.length > 1 && this.status === GameStatus.WAITING;
+  private startNewRound() {
+    this.players.forEach((player) => {
+      player.rollDice();
+    });
+
+    const roundNumber = this.rounds.length + 1;
+    const firstPlayer = this.players[0];
+    this.currentRound = new Round(roundNumber, firstPlayer);
+    this.rounds.push(this.currentRound);
   }
 
-  getId() {
+  public endRound(winner: Player) {
+    if (this.currentRound) {
+      this.currentRound.end(winner);
+
+      // Check if game is finished (only one player remains)
+      const activePlayers = this.players.filter((p) => p.isPlayerActive());
+      if (activePlayers.length <= 1) {
+        this.status = GameStatus.FINISHED;
+      } else {
+        this.startNewRound();
+      }
+    }
+  }
+
+  public end() {
+    this.status = GameStatus.FINISHED;
+  }
+
+  public getId(): string {
     return this.id;
   }
 
-  getPlayers() {
+  public getPlayers(): Player[] {
     return this.players;
   }
 
-  getPlayer(playerId: string) {
+  public getPlayer(playerId: string): Player | undefined {
     return this.players.find((player) => player.getId() === playerId);
   }
 
-  getMaxPlayers() {
+  public getPlayerBySocketId(socketId: string): Player | undefined {
+    return this.players.find((player) => player.getSocketId() === socketId);
+  }
+
+  public getMaxPlayers(): number {
     return this.maxPlayers;
   }
 
-  getStatus(): GameStatus {
+  public getStatus(): GameStatus {
     return this.status;
+  }
+
+  public getCurrentRound(): Round | null {
+    return this.currentRound;
+  }
+
+  public getRounds(): Round[] {
+    return this.rounds;
+  }
+
+  public setStatus(state: GameStatus) {
+    this.status = state;
   }
 }
 

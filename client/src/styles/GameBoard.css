@@ -1,5 +1,9 @@
 .game-board {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .players-container {
@@ -63,7 +67,14 @@
     transition: transform 0.2s;
 }
 
-.dice:hover {
+.dice.hidden {
+    background: #e0e0e0;
+    border-color: #bdbdbd;
+    color: #757575;
+    cursor: default;
+}
+
+.dice:hover:not(.hidden) {
     transform: scale(1.1);
     cursor: pointer;
 }
