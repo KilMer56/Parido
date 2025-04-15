@@ -8,6 +8,7 @@ import React, {
 import { GameHandler } from "../events/GameHandler";
 import { GameState, Game } from "../models/Game";
 import { GameAction } from "../types/actions";
+import { useNotification } from "./NotificationContext";
 
 interface GameContextType {
   state: GameState;
@@ -18,6 +19,7 @@ interface GameContextType {
 export const GameContext = createContext<GameContextType | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
+  const notificationContext = useNotification();
   const [state, setState] = useState<GameState>(Game.createInitialState());
   const [isReady, setIsReady] = useState(false);
   const gameHandler = useRef<GameHandler | null>(null);
@@ -26,6 +28,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     game.current = new Game(setState);
     gameHandler.current = new GameHandler(game.current);
+    gameHandler.current.setNotificationContext(notificationContext);
+
     setIsReady(true);
 
     return () => {

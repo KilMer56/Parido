@@ -5,6 +5,7 @@ import { Player } from "../models/Game";
 import { joinGame, startGame, leaveGame } from "../types/actions";
 import { GameBoard } from "../components/GameBoard";
 import "../styles/GameBoard.css";
+import { GameResults } from "../components/GameResults";
 
 function GameContent() {
   const { state: gameState, dispatch } = useGame();
@@ -35,6 +36,8 @@ function GameContent() {
   const getStatusText = () => {
     if (gameState.status === "in_progress") {
       return "Game in progress";
+    } else if (gameState.status === "finished") {
+      return "Game finished";
     } else if (gameState.players.length === gameState.maxPlayers) {
       return `Lobby is full (${gameState.players.length}/${gameState.maxPlayers}), ready to start!`;
     } else if (gameState.players.length > 1) {
@@ -58,6 +61,8 @@ function GameContent() {
       <div className="game-content">
         {gameState.status === "in_progress" ? (
           <GameBoard />
+        ) : gameState.status === "finished" ? (
+          <GameResults />
         ) : (
           <div className="game-lobby">
             <div className="lobby-card">

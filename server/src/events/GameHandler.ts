@@ -2,13 +2,9 @@ import { Socket } from "socket.io";
 import { gameManager } from "../models/GameManager";
 import Logger from "../utils/logger";
 import { BaseEventHandler, SocketEvent } from "./BasicHandler";
-import { getCurrentDatetime } from "../utils/date";
 import { Player } from "../models/Player";
-import { Round, RoundState } from "../models/Round";
-import { Game } from "../models/Game";
-import { Bid } from "../models/actions/Bid";
-import { Action } from "../models/actions/Action";
-import e from "express";
+import { GameStatus } from "../models/Game";
+import { randomName } from "../utils/random";
 
 class GameHandler extends BaseEventHandler {
   protected events: SocketEvent[] = [
@@ -36,7 +32,7 @@ class GameHandler extends BaseEventHandler {
         const game = gameManager.getGame(gameId);
         if (game) {
           // Todo: pass name
-          if (game.addPlayer(new Player(socket.id, "Guest"))) {
+          if (game.addPlayer(new Player(socket.id, randomName()))) {
             socket.join(gameId);
 
             const playerJoinedData = {
@@ -144,7 +140,6 @@ class GameHandler extends BaseEventHandler {
                   socket.emit("gameStarted", gameDataWithHands);
                 } else {
                   socket
-                    .to(game.getId())
                     .to(player.getSocketId())
                     .emit("gameStarted", gameDataWithHands);
                 }
@@ -199,11 +194,11 @@ class GameHandler extends BaseEventHandler {
                       ?.getActivePlayer()
                       .getSocketId(),
                     lastBid: {
-                      playerId: game
+                      playerSocketId: game
                         .getCurrentRound()
                         ?.getLastBid()
                         ?.getPlayer()
-                        .getId(),
+                        .getSocketId(),
                       quantity: game
                         .getCurrentRound()
                         ?.getLastBid()
@@ -245,26 +240,92 @@ class GameHandler extends BaseEventHandler {
             const round = game.getCurrentRound();
             if (round) {
               try {
+                // Run challenge
                 const challenge = round.challengeBid(
                   player,
                   game.getActiveDices()
                 );
 
-                Logger.info("Challenge over:", challenge);
+                Logger.info("Challenge over:", challenge.getResult());
 
-                const loser = round.getLoser();
+                // Send results
+                let challengeData = {
+                  gameId: game.getId(),
+                  challengerSocketId: player.getSocketId(),
+                  success: challenge.getResult(),
+                  loserSocketId: round.getLoser()?.getSocketId(),
+                };
+
+                socket.emit("bidChallenged", challengeData);
+                socket.to(gameId).emit("bidChallenged", challengeData);
+
+                // End round
                 game.endRound();
 
-                const newRoundData = {
-                  players: game.getPlayers().map((player) => ({
-                    id: player.getId(),
-                    name: player.getName(),
-                    socketId: player.getSocketId(),
-                    hand: player.getHand(),
-                  })),
-                  loserId: loser?.getId(),
-                  winnerId: challenge.winner.getId(),
-                };
+                if (game.getStatus() === GameStatus.ONGOING) {
+                  let gameData = {
+                    gameId: game.getId(),
+                    players: game.getPlayers().map((player) => ({
+                      id: player.getId(),
+                      name: player.getName(),
+                      socketId: player.getSocketId(),
+                      diceCount: player.getHand().length,
+                    })),
+                    currentRound: {
+                      number: game.getCurrentRound()?.getNumber(),
+                      state: game.getCurrentRound()?.getState(),
+                      activePlayerSocketId: game
+                        .getCurrentRound()
+                        ?.getActivePlayer()
+                        .getSocketId(),
+                      lastBid: null,
+                    },
+                  };
+
+                  // Notify all players with their hand
+                  game.getPlayers().forEach((player) => {
+                    const gameDataWithHands = {
+                      ...gameData,
+                      currentRound: {
+                        ...gameData.currentRound,
+                        hand: player.getHand(),
+                      },
+                    };
+
+                    if (player.getSocketId() === socket.id) {
+                      socket.emit("newRoundStarted", gameDataWithHands);
+                    } else {
+                      socket
+                        .to(player.getSocketId())
+                        .emit("newRoundStarted", gameDataWithHands);
+                    }
+                  });
+                } else {
+                  const gameData = {
+                    gameId: game.getId(),
+                    status: game.getStatus(),
+                    players: game.getPlayers().map((player) => ({
+                      id: player.getId(),
+                      name: player.getName(),
+                      socketId: player.getSocketId(),
+                      diceCount: player.getHand().length,
+                    })),
+                    rounds: game.getRounds().map((round) => ({
+                      number: round.getNumber(),
+                      state: round.getState(),
+                      actions: round.getActions().map((action) => ({
+                        id: action.getId(),
+                        type: action.getType(),
+                        playerId: action.getPlayer().getId(),
+                        data: action.getData(),
+                      })),
+                    })),
+                    winnerSocketId: game.getWinner()?.getSocketId(),
+                  };
+
+                  socket.to(gameId).emit("gameEnded", gameData);
+                  socket.emit("gameEnded", gameData);
+                }
               } catch (error) {
                 this.emitError(socket, error);
                 Logger.error("Challenge error:", error);
@@ -291,59 +352,6 @@ class GameHandler extends BaseEventHandler {
     } else {
       socket.emit("error", { message: "An unknown error occurred" });
     }
-  }
-
-  private buildPlayerSocketData(player: Player) {
-    return {
-      id: player.getId(),
-      name: player.getName(),
-      hand: player.getHand(),
-      isActive: player.isActive(),
-    };
-  }
-
-  private buildActionSocketData(action: Action) {
-    return {
-      id: action.getId(),
-      type: action.getType(),
-      playerId: action.getPlayer().getId(),
-      data: action.getData(),
-    };
-  }
-
-  private buildRoundSocketData(round: Round) {
-    return {
-      state: round.getState(),
-      actions: round
-        .getActions()
-        .map((action) => this.buildActionSocketData(action)),
-      lastBid: round.getLastBid(),
-      loser: round.getLoser()?.getId(),
-    };
-  }
-
-  private buildGameData(game: Game) {
-    return {
-      players: game.getPlayers().map((player) => ({
-        id: player.getId(),
-        name: player.getName(),
-        hand: player.getHand(),
-        isActive: player.isActive(),
-      })),
-      rounds: game.getRounds().map((round) => ({
-        state: round.getState(),
-        actions: round.getActions().map((action) => ({
-          id: action.getId(),
-          type: action.getType(),
-          playerId: action.getPlayer().getId(),
-          data: action.getData(),
-        })),
-      })),
-      currentPlayerSocketId: game
-        .getCurrentRound()
-        ?.getActivePlayer()
-        .getSocketId(),
-    };
   }
 }
 

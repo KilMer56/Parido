@@ -114,7 +114,6 @@ button {
 
 /* Game Page Styles */
 .game-container {
-  width: 100%;
   max-width: 1200px;
   padding: 2rem;
   background: rgba(255, 255, 255, 0.9);
@@ -129,6 +128,7 @@ button {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #eee;
+  gap: 2rem;
 }
 
 .game-info h1 {

@@ -22,7 +22,7 @@ export class Game {
     this.status = GameStatus.WAITING;
     this.currentRound = null;
     this.rounds = [];
-    this.maxPlayers = 2;
+    this.maxPlayers = 5;
   }
 
   public addPlayer(player: Player): boolean {
@@ -107,6 +107,13 @@ export class Game {
     const currentIndex = this.players.indexOf(player);
     const nextIndex = (currentIndex + 1) % this.players.length;
     return this.players[nextIndex];
+  }
+
+  public getWinner(): Player | null {
+    if (this.status === GameStatus.FINISHED) {
+      return this.players.find((player) => player.isActive()) || null;
+    }
+    return null;
   }
 
   public getStatus(): GameStatus {

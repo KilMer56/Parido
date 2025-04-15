@@ -1,7 +1,7 @@
 import { Player } from "../models/Game";
 import { useGame } from "../contexts/GameContext";
 import { useState } from "react";
-import { bid } from "../types/actions";
+import { bid, challenge } from "../types/actions";
 
 export function GameBoard() {
   const { state, dispatch } = useGame();
@@ -10,6 +10,10 @@ export function GameBoard() {
 
   const handleBid = () => {
     dispatch(bid(bidQuantity, bidValue));
+  };
+
+  const handleChallenge = () => {
+    dispatch(challenge());
   };
 
   const isActivePlayer =
@@ -22,6 +26,7 @@ export function GameBoard() {
   return (
     <div className="game-board">
       <h3>Game Board</h3>
+      <h4>Round {state.currentRound.number}</h4>
       <div className="players-container">
         {state.players.map((player: Player) => (
           <div
@@ -106,7 +111,11 @@ export function GameBoard() {
         >
           Bid
         </button>
-        <button className="action challenge-button" disabled={!isActivePlayer}>
+        <button
+          className="action challenge-button"
+          onClick={handleChallenge}
+          disabled={!isActivePlayer}
+        >
           Challenge
         </button>
       </div>

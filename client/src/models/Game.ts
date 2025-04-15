@@ -11,10 +11,11 @@ export interface Round {
   activePlayerSocketId: string;
   hand: number[];
   lastBid?: Bid | null;
+  actions?: unknown;
 }
 
 export interface Bid {
-  playerId: string;
+  playerSocketId: string;
   quantity: number;
   value: number;
 }
@@ -22,12 +23,14 @@ export interface Bid {
 export type GameStatus = "waiting" | "in_progress" | "finished";
 
 export interface GameState {
-  gameId: string | null;
+  gameId?: string;
   status: GameStatus;
   maxPlayers: number;
   players: Player[];
-  currentRound?: Round | null;
+  currentRound?: Round;
   playerSocketId?: string;
+  logs?: unknown;
+  winnerSocketId?: string;
 }
 
 export class Game {
@@ -36,9 +39,8 @@ export class Game {
 
   public static createInitialState(): GameState {
     return {
-      gameId: null,
       status: "waiting",
-      maxPlayers: 2,
+      maxPlayers: 5,
       players: [],
     };
   }
@@ -61,7 +63,7 @@ export class Game {
   }
 
   public getGameId(): string | null {
-    return this.state.gameId;
+    return this.state.gameId || null;
   }
 
   public setStatus(status: GameStatus): void {
@@ -116,6 +118,26 @@ export class Game {
 
   public canStart(): boolean {
     return this.state.status === "waiting" && this.state.players.length > 1;
+  }
+
+  public setLogs(logs: unknown): void {
+    this.setState({ logs });
+  }
+
+  public getLogs(): unknown {
+    return this.state.logs;
+  }
+
+  public setWinnerSocketId(winnerSocketId: string): void {
+    this.setState({ winnerSocketId });
+  }
+
+  public getWinner(): Player | null {
+    return (
+      this.state.players.find(
+        (player) => player.socketId === this.state.winnerSocketId
+      ) || null
+    );
   }
 }
 

@@ -2,11 +2,13 @@ import { Socket } from "socket.io-client";
 import { SocketEvent, SocketManager } from "./SocketManager";
 import Logger from "../utils/logger";
 import { Game, Player, Round } from "../models/Game";
+import { NotificationContextType } from "../contexts/NotificationContext";
 
 export class GameHandler {
   private socketManager: SocketManager;
   private events: SocketEvent[];
   private game: Game;
+  private notificationContext: NotificationContextType | null = null;
 
   constructor(game: Game) {
     this.socketManager = SocketManager.getInstance();
@@ -22,6 +24,7 @@ export class GameHandler {
           };
 
           Logger.info("Game created:", game);
+          this.showNotification("Game created", "info");
 
           this.game.setGameId(game.gameId);
           this.game.setState({ maxPlayers: game.maxPlayers });
@@ -41,6 +44,7 @@ export class GameHandler {
             maxPlayers: number;
           };
           Logger.info("Game joined:", game);
+          this.showNotification("New player joined", "info");
 
           if (this.game.getGameId() === null) {
             this.game.setGameId(game.gameId);
@@ -62,6 +66,7 @@ export class GameHandler {
             maxPlayers: number;
           };
           Logger.info("Player left:", data);
+          this.showNotification("A player left", "info");
 
           this.game.setPlayers(data.players);
         },
@@ -76,6 +81,7 @@ export class GameHandler {
           };
 
           Logger.info("Game started:", data);
+          this.showNotification("Game started!", "info");
 
           this.game.setPlayers(data.players);
           this.game.setStatus("in_progress");
@@ -84,13 +90,13 @@ export class GameHandler {
       },
       {
         name: "bidPlaced",
-        handler: (_socket: Socket, ...args: unknown[]) => {
+        handler: (socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
             gameId: string;
             currentRound: {
               activePlayerSocketId: string;
               lastBid: {
-                playerId: string;
+                playerSocketId: string;
                 quantity: number;
                 value: number;
               };
@@ -98,6 +104,13 @@ export class GameHandler {
           };
 
           Logger.info("Bid placed:", data);
+          Logger.debug("Socket Id:", socket.id || "");
+
+          if (data.currentRound.lastBid?.playerSocketId == socket.id) {
+            this.showNotification("Your bid has been place", "success");
+          } else {
+            this.showNotification("A new bid has been placed", "info");
+          }
 
           const round = this.game.getCurrentRound();
           if (round) {
@@ -107,9 +120,100 @@ export class GameHandler {
           }
         },
       },
+      {
+        name: "bidChallenged",
+        handler: (socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            gameId: string;
+            challengerSocketId: string;
+            success: boolean;
+            loserSocketId: string;
+          };
+
+          Logger.info("Bid challenged:", data);
+
+          if (data.challengerSocketId == socket.id) {
+            if (data.success) {
+              this.showNotification("Your challenge succeeded!", "success");
+            } else {
+              this.showNotification(
+                "Your challenge failed, you loose a dice",
+                "error"
+              );
+            }
+          } else if (data.loserSocketId == socket.id) {
+            if (data.success) {
+              this.showNotification(
+                "Your bid got challenged, you loose a dice",
+                "error"
+              );
+            } else {
+              this.showNotification("Your bid passed!", "success");
+            }
+          } else {
+            this.showNotification(
+              "The current bid has been challenged!",
+              "info"
+            );
+          }
+        },
+      },
+      {
+        name: "newRoundStarted",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            gameId: string;
+            players: Player[];
+            currentRound: Round;
+          };
+
+          Logger.info("New round started:", data);
+          this.showNotification("New round started", "info");
+
+          this.game.setPlayers(data.players);
+          this.game.setCurrentRound(data.currentRound);
+        },
+      },
+      {
+        name: "gameEnded",
+        handler: (socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            gameId: string;
+            players: Player[];
+            rounds: Round[];
+            winnerSocketId: string;
+          };
+
+          Logger.info("Game ended:", data);
+
+          this.game.setStatus("finished");
+          this.game.setPlayers(data.players);
+          this.game.setLogs(data.rounds);
+          this.game.setWinnerSocketId(data.winnerSocketId);
+
+          if (data.winnerSocketId === socket.id) {
+            this.showNotification("You've won the game, congrats!", "success");
+          } else {
+            this.showNotification("The game ended, we have a winner!", "info");
+          }
+        },
+      },
     ];
 
     this.socketManager.registerEvents(this.events);
+  }
+
+  public setNotificationContext(context: NotificationContextType): void {
+    this.notificationContext = context;
+  }
+
+  private showNotification(
+    message: string,
+    type: "error" | "success" | "info"
+  ): void {
+    if (this.notificationContext) {
+      this.notificationContext.addNotification(message, type);
+    }
   }
 
   public cleanup(): void {
