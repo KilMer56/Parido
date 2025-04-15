@@ -46,14 +46,14 @@ export function GameBoard() {
               {player.socketId === state.playerSocketId
                 ? state.currentRound?.hand.map(
                     (value: number, index: number) => (
-                      <div key={index} className="dice">
+                      <div key={index} className="die">
                         {value}
                       </div>
                     )
                   )
                 : Array.from({ length: player.diceCount ?? 5 }).map(
                     (_: unknown, index: number) => (
-                      <div key={index} className="dice hidden">
+                      <div key={index} className="die hidden">
                         ?
                       </div>
                     )
