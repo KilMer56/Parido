@@ -1,8 +1,8 @@
 import { Socket } from "socket.io-client";
-import { SocketEvent, SocketManager } from "./SocketManager";
-import Logger from "../utils/logger";
-import { Game, Player, Round } from "../models/Game";
-import { NotificationContextType } from "../contexts/NotificationContext";
+import { SocketEvent, SocketManager } from "../SocketManager";
+import Logger from "../../utils/logger";
+import { Game, Player, Round } from "../../models/Game";
+import { NotificationContextType } from "../../contexts/NotificationContext";
 
 export class GameHandler {
   private socketManager: SocketManager;
@@ -15,6 +15,7 @@ export class GameHandler {
     this.game = game;
 
     this.events = [
+      // Game is created
       {
         name: "gameCreated",
         handler: (_socket: Socket, ...args: unknown[]) => {
@@ -35,6 +36,7 @@ export class GameHandler {
           }
         },
       },
+      // Player joined
       {
         name: "playerJoined",
         handler: (_socket: Socket, ...args: unknown[]) => {
@@ -57,6 +59,7 @@ export class GameHandler {
           this.game.setPlayers(game.players);
         },
       },
+      // Player left
       {
         name: "playerLeft",
         handler: (_socket: Socket, ...args: unknown[]) => {
@@ -71,6 +74,7 @@ export class GameHandler {
           this.game.setPlayers(data.players);
         },
       },
+      // Game started
       {
         name: "gameStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
@@ -88,6 +92,7 @@ export class GameHandler {
           this.game.setCurrentRound(data.currentRound);
         },
       },
+      // Bid just got placed
       {
         name: "bidPlaced",
         handler: (socket: Socket, ...args: unknown[]) => {
@@ -158,6 +163,7 @@ export class GameHandler {
           }
         },
       },
+      // New round started
       {
         name: "newRoundStarted",
         handler: (_socket: Socket, ...args: unknown[]) => {
@@ -174,6 +180,7 @@ export class GameHandler {
           this.game.setCurrentRound(data.currentRound);
         },
       },
+      // Game ended
       {
         name: "gameEnded",
         handler: (socket: Socket, ...args: unknown[]) => {

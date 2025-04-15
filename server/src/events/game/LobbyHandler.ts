@@ -1,0 +1,100 @@
+import { Socket } from "socket.io";
+import { gameManager } from "../../models/GameManager";
+import Logger from "../../utils/logger";
+import { BaseEventHandler, SocketEvent } from "../BasicHandler";
+import { Player } from "../../models/Player";
+import { randomName } from "../../utils/random";
+import { emitError } from "../../utils/socket";
+
+class LobbyHandler extends BaseEventHandler {
+  protected events: SocketEvent[] = [
+    {
+      name: "createGame",
+      handler: (socket: Socket) => {
+        Logger.info("Client creating game");
+
+        const game = gameManager.createGame();
+        socket.join(game.getId());
+
+        socket.emit("gameCreated", {
+          gameId: game.getId(),
+          maxPlayers: game.getMaxPlayers(),
+        });
+
+        Logger.info("Game created:", game.getId());
+      },
+    },
+    {
+      name: "joinGame",
+      handler: (socket: Socket, gameId: string) => {
+        Logger.info("Client joining game:", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          // Todo: pass name
+          if (game.addPlayer(new Player(socket.id, randomName()))) {
+            socket.join(gameId);
+
+            const playerJoinedData = {
+              gameId: game.getId(),
+              players: game.getPlayers().map((player) => ({
+                id: player.getId(),
+                name: player.getName(),
+                socketId: player.getSocketId(),
+              })),
+            };
+
+            // Notify all players about the new player
+            socket.emit("playerJoined", playerJoinedData);
+            socket.to(game.getId()).emit("playerJoined", playerJoinedData);
+
+            Logger.info("Player joined game:", gameId);
+          } else {
+            emitError(socket, new Error("Game is full or has already started"));
+            Logger.error("Game is full or has started:", gameId);
+          }
+        } else {
+          emitError(socket, new Error("Game not found"));
+          Logger.error("Game not found:", gameId);
+        }
+      },
+    },
+    {
+      name: "leaveGame",
+      handler: (socket: Socket, gameId: string) => {
+        Logger.info("Client leaving game:", gameId);
+
+        const game = gameManager.getGame(gameId);
+        if (game) {
+          // Remove the player from the game
+          const player = game.getPlayerBySocketId(socket.id);
+          if (player) {
+            game.removePlayer(player);
+
+            Logger.info("Player left game:", gameId);
+
+            if (game.getPlayers().length === 0) {
+              gameManager.removeGame(gameId);
+            } else {
+              const playerLeftData = {
+                gameId: game.getId(),
+                players: game.getPlayers().map((player) => ({
+                  id: player.getId(),
+                  name: player.getName(),
+                  socketId: player.getSocketId(),
+                })),
+              };
+
+              // Notify all players about the player leaving
+              socket.to(game.getId()).emit("playerLeft", playerLeftData);
+              socket.leave(gameId);
+            }
+          }
+        }
+      },
+    },
+  ];
+}
+
+export const lobbyHandler = new LobbyHandler();
+

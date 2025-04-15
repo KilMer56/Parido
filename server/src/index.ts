@@ -5,8 +5,9 @@ import { Server, Socket } from "socket.io";
 import Logger from "./utils/logger";
 import { EventHandler } from "./events/BasicHandler";
 import { basicHandler } from "./events/BasicHandler";
-import { gameHandler } from "./events/GameHandler";
+import { lobbyHandler } from "./events/game/LobbyHandler";
 import { Config } from "./config";
+import { gameHandler } from "./events/game/GameHandler";
 
 class GameServer {
   private app: express.Application;
@@ -33,7 +34,7 @@ class GameServer {
     });
 
     // Initialize handlers
-    this.handlers = [basicHandler, gameHandler];
+    this.handlers = [basicHandler, lobbyHandler, gameHandler];
 
     // Setup middleware and routes
     this.setupMiddleware();

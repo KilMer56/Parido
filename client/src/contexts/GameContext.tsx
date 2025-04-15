@@ -5,7 +5,7 @@ import React, {
   useCallback,
   createContext,
 } from "react";
-import { GameHandler } from "../events/GameHandler";
+import { GameHandler } from "../events/handlers/GameHandler";
 import { GameState, Game } from "../models/Game";
 import { GameAction } from "../types/actions";
 import { useNotification } from "./NotificationContext";
