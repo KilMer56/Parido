@@ -25,8 +25,7 @@ export function GameBoard() {
 
   return (
     <div className="game-board">
-      <h3>Game Board</h3>
-      <h4>Round {state.currentRound.number}</h4>
+      <span className="big-text">Round {state.currentRound.number}</span>
       <div className="players-container">
         {state.players.map((player: Player) => (
           <div
@@ -63,26 +62,27 @@ export function GameBoard() {
           </div>
         ))}
       </div>
-      <div className="bid-container">
-        <h4>Current Bid</h4>
-        <div className="bid">
-          {state.currentRound?.lastBid ? (
-            <>
-              <span className="bid-quantity">
-                {state.currentRound?.lastBid.quantity}
-              </span>
-              <span className="bid-value">x</span>
-              <span className="bid-value">
-                {state.currentRound?.lastBid.value}
-              </span>
-            </>
-          ) : (
-            <span className="bid-value">No bids placed yet</span>
-          )}
-        </div>
+      <div className="bid">
+        {state.currentRound?.lastBid ? (
+          <>
+            <span className="big-text">Current Bid: </span>
+            <span className="bid-quantity">
+              {state.currentRound?.lastBid.quantity}
+            </span>
+            <span className="bid-value">🎲</span>
+            <span className="bid-value">
+              {state.currentRound?.lastBid.value}
+            </span>
+          </>
+        ) : (
+          <span className="bid-value no-bid">No bids placed yet</span>
+        )}
+      </div>
+      <div></div>
+      <div className="actions-container">
         <div className="bid-inputs">
           <label>
-            Quantity:
+            🎲 Quantity:
             <input
               type="number"
               value={bidQuantity}
@@ -92,7 +92,7 @@ export function GameBoard() {
             />
           </label>
           <label>
-            Value:
+            🎲 Value:
             <input
               type="number"
               value={bidValue}
@@ -102,22 +102,22 @@ export function GameBoard() {
             />
           </label>
         </div>
-      </div>
-      <div className="actions-container">
-        <button
-          className="action bid-button"
-          onClick={handleBid}
-          disabled={!isActivePlayer}
-        >
-          Bid
-        </button>
-        <button
-          className="action challenge-button"
-          onClick={handleChallenge}
-          disabled={!isActivePlayer}
-        >
-          Challenge
-        </button>
+        <div className="buttons-container">
+          <button
+            className="action bid-button"
+            onClick={handleBid}
+            disabled={!isActivePlayer}
+          >
+            Bid
+          </button>
+          <button
+            className="action challenge-button"
+            onClick={handleChallenge}
+            disabled={!isActivePlayer}
+          >
+            Challenge
+          </button>
+        </div>
       </div>
     </div>
   );
