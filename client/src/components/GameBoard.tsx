@@ -46,7 +46,7 @@ export function GameBoard() {
               {player.socketId === state.playerSocketId
                 ? state.currentRound?.hand.map(
                     (value: number, index: number) => (
-                      <div key={index} className="die">
+                      <div key={player.id + "-" + index} className="die">
                         {value}
                       </div>
                     )
@@ -69,17 +69,18 @@ export function GameBoard() {
             <span className="bid-quantity">
               {state.currentRound?.lastBid.quantity}
             </span>
-            <span className="bid-value">🎲</span>
+            <span>x</span>
             <span className="bid-value">
               {state.currentRound?.lastBid.value}
             </span>
+            <span className="bid-value">🎲</span>
           </>
         ) : (
-          <span className="bid-value no-bid">No bids placed yet</span>
+          <span className="bid-value disabled">No bids placed yet</span>
         )}
       </div>
       <div></div>
-      <div className="actions-container">
+      <div className={`actions-container ${!isActivePlayer ? "disabled" : ""}`}>
         <div className="bid-inputs">
           <label>
             🎲 Quantity:
