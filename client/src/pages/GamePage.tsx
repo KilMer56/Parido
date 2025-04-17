@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGame, GameProvider } from "../contexts/GameContext";
-import { Player } from "../models/Game";
-import { joinGame, startGame, leaveGame } from "../types/actions";
+import { useGame } from "../contexts/GameContext";
+import { leaveGame } from "../types/actions";
 import { GameBoard } from "../components/GameBoard";
 import "../styles/GameBoard.css";
 import { GameResults } from "../components/GameResults";
+import { GameLobby } from "../components/GameLobby";
 
 function GameContent() {
   const { state: gameState, dispatch } = useGame();
@@ -14,37 +14,13 @@ function GameContent() {
 
   // Handle initial URL state
   useEffect(() => {
-    if (urlGameId && !gameState.gameId) {
-      dispatch(joinGame(urlGameId));
-    }
+    //
   }, [urlGameId, gameState.gameId, dispatch]);
 
   const handleLeaveGame = () => {
     // Todo: Fix join when leaving
     dispatch(leaveGame());
     navigate("/");
-  };
-
-  const handleStartGame = () => {
-    if (gameState.gameId) {
-      dispatch(startGame());
-    }
-  };
-
-  const canStart =
-    gameState.status === "waiting" && gameState.players.length > 1;
-  const getStatusText = () => {
-    if (gameState.status === "in_progress") {
-      return "Game in progress";
-    } else if (gameState.status === "finished") {
-      return "Game finished";
-    } else if (gameState.players.length === gameState.maxPlayers) {
-      return `Lobby is full (${gameState.players.length}/${gameState.maxPlayers}), ready to start!`;
-    } else if (gameState.players.length > 1) {
-      return `Players (${gameState.players.length}/${gameState.maxPlayers}), waiting for game to start...`;
-    } else {
-      return `Waiting for players (${gameState.players.length}/${gameState.maxPlayers})`;
-    }
   };
 
   return (
@@ -64,25 +40,7 @@ function GameContent() {
         ) : gameState.status === "finished" ? (
           <GameResults />
         ) : (
-          <div className="game-lobby">
-            <div className="lobby-card">
-              <h3>Game Lobby</h3>
-              <p className="status-value">{getStatusText()}</p>
-              {canStart && (
-                <button className="start-game-button" onClick={handleStartGame}>
-                  Start Game
-                </button>
-              )}
-              <div className="player-list">
-                <h4>Players</h4>
-                <ul>
-                  {gameState.players.map((player: Player) => (
-                    <li key={player.id}>{player.name}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
+          <GameLobby gameState={gameState} />
         )}
       </div>
     </div>
@@ -90,10 +48,6 @@ function GameContent() {
 }
 
 export function GamePage() {
-  return (
-    <GameProvider>
-      <GameContent />
-    </GameProvider>
-  );
+  return <GameContent />;
 }
 

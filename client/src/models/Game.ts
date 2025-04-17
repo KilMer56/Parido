@@ -31,6 +31,7 @@ export interface GameState {
   playerSocketId?: string;
   logs?: unknown;
   winnerSocketId?: string;
+  username?: string;
 }
 
 export class Game {
@@ -68,6 +69,14 @@ export class Game {
 
   public setStatus(status: GameStatus): void {
     this.setState({ status });
+  }
+
+  public setUsername(username: string): void {
+    this.setState({ username });
+  }
+
+  public getUsername(): string | null {
+    return this.state.username || null;
   }
 
   public getStatus(): GameStatus {

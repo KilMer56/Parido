@@ -9,6 +9,7 @@ export class GameHandler {
   private events: SocketEvent[];
   private game: Game;
   private notificationContext: NotificationContextType | null = null;
+  private navigate?: (path: string) => void;
 
   constructor(game: Game) {
     this.socketManager = SocketManager.getInstance();
@@ -36,6 +37,48 @@ export class GameHandler {
           }
         },
       },
+      // Game joined
+      {
+        name: "gameJoined",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const game = args[0] as {
+            gameId: string;
+            players: Player[];
+            maxPlayers: number;
+          };
+
+          const socketId = this.socketManager.getSocket().id;
+          if (socketId) {
+            this.game.setPlayerSocketId(socketId);
+          }
+
+          const username =
+            game.players.find(
+              (p) => p.socketId === this.game.getPlayerSocketId()
+            )?.name || "";
+
+          if (!username) {
+            Logger.error("Username not found in players list");
+            this.showNotification("Username not found", "error");
+            return;
+          }
+
+          localStorage.setItem("gameId", game.gameId);
+          localStorage.setItem("username", username);
+
+          Logger.info("Game joined:", game);
+          this.showNotification("Game joined", "info");
+
+          this.game.setGameId(game.gameId);
+          this.game.setUsername(username);
+          this.game.setState({ maxPlayers: game.maxPlayers });
+          this.game.setPlayers(game.players);
+
+          if (this.navigate) {
+            this.navigate("/game/" + game.gameId);
+          }
+        },
+      },
       // Player joined
       {
         name: "playerJoined",
@@ -47,15 +90,6 @@ export class GameHandler {
           };
           Logger.info("Game joined:", game);
           this.showNotification("New player joined", "info");
-
-          if (this.game.getGameId() === null) {
-            this.game.setGameId(game.gameId);
-            const socketId = this.socketManager.getSocket().id;
-            if (socketId) {
-              this.game.setPlayerSocketId(socketId);
-            }
-          }
-
           this.game.setPlayers(game.players);
         },
       },
@@ -223,18 +257,31 @@ export class GameHandler {
     }
   }
 
+  public setNavigate(navigate: (path: string) => void): void {
+    this.navigate = navigate;
+  }
+
   public cleanup(): void {
     this.socketManager.unregisterEvents(this.events);
   }
 
-  public createGame(): void {
-    Logger.info("Creating game");
-    this.socketManager.emit("createGame");
+  public createGame(username: string): void {
+    Logger.info("Creating game", username);
+    this.socketManager.emit("createGame", username);
   }
 
-  public joinGame(gameId: string): void {
-    Logger.info("Joining game:", gameId);
-    this.socketManager.emit("joinGame", gameId);
+  public joinGame(gameId: string, username: string): void {
+    Logger.info("Joining game:", gameId, username);
+    this.socketManager.emit("joinGame", gameId, username);
+  }
+
+  public leaveGame(): void {
+    Logger.info("Leaving game");
+    this.socketManager.emit("leaveGame", this.game.getGameId());
+    this.game.setState(Game.createInitialState());
+    // Todo move to response
+    localStorage.removeItem("gameId");
+    localStorage.removeItem("username");
   }
 
   public startGame(): void {
@@ -242,12 +289,6 @@ export class GameHandler {
       Logger.info("Starting game:", this.game.getGameId());
       this.socketManager.emit("startGame", this.game.getGameId());
     }
-  }
-
-  public leaveGame(): void {
-    Logger.info("Leaving game");
-    this.socketManager.emit("leaveGame", this.game.getGameId());
-    this.game.setState(Game.createInitialState());
   }
 
   public placeBid(quantity: number, value: number): void {

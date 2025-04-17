@@ -88,16 +88,16 @@ button {
   margin-top: 1rem;
 }
 
-.join-input {
+.input {
   padding: 0.8em;
   border-radius: 8px;
   border: 1px solid #ddd;
   font-size: 1rem;
-  width: 200px;
+  max-width: 200px;
   transition: border-color 0.2s ease;
 }
 
-.join-input:focus {
+.input:focus {
   outline: none;
   border-color: #3498db;
 }

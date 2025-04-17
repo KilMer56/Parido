@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
+import { useGame } from "../contexts/GameContext";
+import { createGame, joinGame } from "../types/actions";
 import { useNavigate } from "react-router-dom";
-import { useGame, GameProvider } from "../contexts/GameContext";
-import { createGame } from "../types/actions";
 
 function HomeContent() {
   const { dispatch, state } = useGame();
   const [gameId, setGameId] = useState("");
+  const [username, setUsername] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedGameId = localStorage.getItem("gameId");
+    if (storedGameId) {
+      navigate(`/${storedGameId}`);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (state.gameId) {
@@ -14,22 +22,34 @@ function HomeContent() {
     }
   }, [state.gameId, navigate]);
 
-  const handleJoinGame = (e: React.FormEvent) => {
+  const handleCreateGame = async () => {
+    dispatch(createGame(username.trim()));
+  };
+
+  const handleJoinGame = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (gameId.trim()) {
-      navigate(`/${gameId.trim()}`);
-      setGameId("");
-    }
+    dispatch(joinGame(gameId.trim(), username.trim()));
   };
 
   return (
     <div className="container">
       <h1>Parido</h1>
       <p className="description">
-        A fast-paced multiplayer game where players compete in real-time. 
-        Create a new game or join an existing one to start playing!
+        A multiplayer game where players lie to each other. Create a new game or
+        join an existing one to start playing!
       </p>
-      <button className="create-game" onClick={() => dispatch(createGame())}>
+      <input
+        id="username-input"
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Enter username"
+        className="input"
+        minLength={4}
+        maxLength={12}
+        required={true}
+      />
+      <button className="create-game" onClick={handleCreateGame}>
         Create Game
       </button>
       <form onSubmit={handleJoinGame} className="join-form">
@@ -39,7 +59,10 @@ function HomeContent() {
           value={gameId}
           onChange={(e) => setGameId(e.target.value)}
           placeholder="Enter game ID"
-          className="join-input"
+          className="input"
+          minLength={2}
+          maxLength={12}
+          required={true}
         />
         <button type="submit" className="submit-game">
           Join Game
@@ -50,9 +73,6 @@ function HomeContent() {
 }
 
 export function HomePage() {
-  return (
-    <GameProvider>
-      <HomeContent />
-    </GameProvider>
-  );
+  return <HomeContent />;
 }
+

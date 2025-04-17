@@ -9,6 +9,8 @@ import { GameHandler } from "../events/handlers/GameHandler";
 import { GameState, Game } from "../models/Game";
 import { GameAction } from "../types/actions";
 import { useNotification } from "./NotificationContext";
+import Logger from "../utils/logger";
+import { useNavigate } from "react-router-dom";
 
 interface GameContextType {
   state: GameState;
@@ -19,6 +21,7 @@ interface GameContextType {
 export const GameContext = createContext<GameContextType | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
   const notificationContext = useNotification();
   const [state, setState] = useState<GameState>(Game.createInitialState());
   const [isReady, setIsReady] = useState(false);
@@ -29,6 +32,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     game.current = new Game(setState);
     gameHandler.current = new GameHandler(game.current);
     gameHandler.current.setNotificationContext(notificationContext);
+    gameHandler.current.setNavigate((path: string) => {
+      navigate(path);
+    });
 
     setIsReady(true);
 
@@ -46,12 +52,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!isReady || !gameHandler.current) return;
 
       switch (action.type) {
-        case "create":
-          gameHandler.current.createGame();
+        case "create": {
+          const payload = action.payload as {
+            username: string;
+          };
+
+          Logger.info("Creating game with username:", payload.username);
+
+          gameHandler.current.createGame(payload.username);
           break;
-        case "join":
-          gameHandler.current.joinGame(action.payload as string);
+        }
+        case "join": {
+          const payload = action.payload as {
+            gameId: string;
+            username: string;
+          };
+
+          gameHandler.current.joinGame(payload.gameId, payload.username);
           break;
+        }
         case "start":
           gameHandler.current.startGame();
           break;

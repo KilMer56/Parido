@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import Logger from "../utils/logger";
 import { NotificationContextType } from "../contexts/NotificationContext";
+import { SOCKET_URL } from "../constants";
 
 export interface SocketEvent {
   name: string;
@@ -16,8 +17,6 @@ export class SocketManager {
   private notificationContext: NotificationContextType | null = null;
 
   private constructor() {
-    const SOCKET_URL =
-      import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
     Logger.info("Initializing SocketManager with URL:", SOCKET_URL);
 
     this.socket = io(SOCKET_URL, {
