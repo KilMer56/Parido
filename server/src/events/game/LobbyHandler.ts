@@ -3,36 +3,49 @@ import { gameManager } from "../../models/GameManager";
 import Logger from "../../utils/logger";
 import { BaseEventHandler, SocketEvent } from "../BasicHandler";
 import { Player } from "../../models/Player";
-import { randomName } from "../../utils/random";
 import { emitError } from "../../utils/socket";
 
 class LobbyHandler extends BaseEventHandler {
   protected events: SocketEvent[] = [
     {
       name: "createGame",
-      handler: (socket: Socket) => {
-        Logger.info("Client creating game");
+      handler: (socket: Socket, username: string) => {
+        Logger.info("Client creating game", username);
 
         const game = gameManager.createGame();
-        socket.join(game.getId());
+        if (game.addPlayer(new Player(socket.id, username))) {
+          socket.join(game.getId());
 
-        socket.emit("gameCreated", {
-          gameId: game.getId(),
-          maxPlayers: game.getMaxPlayers(),
-        });
+          socket.emit("gameCreated", {
+            gameId: game.getId(),
+            maxPlayers: game.getMaxPlayers(),
+          });
 
-        Logger.info("Game created:", game.getId());
+          socket.emit("gameJoined", {
+            gameId: game.getId(),
+            players: game.getPlayers().map((player) => ({
+              id: player.getId(),
+              name: player.getName(),
+              socketId: player.getSocketId(),
+            })),
+            maxPlayers: game.getMaxPlayers(),
+          });
+
+          Logger.info("Game created & joined:", game.getId());
+        } else {
+          emitError(socket, new Error("Game is full or has already started"));
+          Logger.error("Game is full or has started:", game.getId());
+        }
       },
     },
     {
       name: "joinGame",
-      handler: (socket: Socket, gameId: string) => {
-        Logger.info("Client joining game:", gameId);
+      handler: (socket: Socket, gameId: string, username: string) => {
+        Logger.info("Client joining game:", gameId, username);
 
         const game = gameManager.getGame(gameId);
         if (game) {
-          // Todo: pass name
-          if (game.addPlayer(new Player(socket.id, randomName()))) {
+          if (game.addPlayer(new Player(socket.id, username))) {
             socket.join(gameId);
 
             const playerJoinedData = {
@@ -42,10 +55,11 @@ class LobbyHandler extends BaseEventHandler {
                 name: player.getName(),
                 socketId: player.getSocketId(),
               })),
+              maxPlayers: game.getMaxPlayers(),
             };
 
             // Notify all players about the new player
-            socket.emit("playerJoined", playerJoinedData);
+            socket.emit("gameJoined", playerJoinedData);
             socket.to(game.getId()).emit("playerJoined", playerJoinedData);
 
             Logger.info("Player joined game:", gameId);

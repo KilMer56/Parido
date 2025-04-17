@@ -10,11 +10,27 @@ export class Player {
 
   constructor(socketId: string, name: string, diceCount: number = 5) {
     this.id = randomId();
-    this.name = name;
     this.diceCount = diceCount;
     this.hand = Array(diceCount).fill(0);
     this.active = true;
     this.socketId = socketId;
+    this.name = "Player"; // Default before setting the name
+    this.cleanAndSetName(name);
+  }
+
+  private cleanAndSetName(name: string) {
+    // Remove leading and trailing spaces
+    name = name.trim();
+
+    // Reduces size of the name
+    if (name.length > 12) {
+      name = name.slice(0, 11);
+    }
+    if (name.length === 0) {
+      name = "Player";
+    }
+
+    this.name = name;
   }
 
   public rollDice() {

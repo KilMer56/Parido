@@ -8,6 +8,8 @@ import { basicHandler } from "./events/BasicHandler";
 import { lobbyHandler } from "./events/game/LobbyHandler";
 import { Config } from "./config";
 import { gameHandler } from "./events/game/GameHandler";
+import { gameManager } from "./models/GameManager";
+import { GameStatus } from "./models/Game";
 
 class GameServer {
   private app: express.Application;
@@ -48,8 +50,31 @@ class GameServer {
   }
 
   private setupRoutes(): void {
+    // Health endpoint
     this.app.get("/health", (_req: Request, res: Response) => {
       res.json({ status: "ok" });
+    });
+
+    // Game check endpoint
+    this.app.get("/game/:id", async (req: Request, res: Response) => {
+      const gameId = req.params.id;
+
+      Logger.info("Checking game status for ID:", gameId);
+
+      const game = gameManager.getGame(gameId);
+
+      if (game) {
+        if (game.getStatus() !== GameStatus.FINISHED) {
+          Logger.info("Ongoing game found:", gameId);
+          res.status(200).json({ message: "Game found", game });
+        } else {
+          Logger.info("Game finished:", gameId);
+          res.status(410).json({ message: "Game finished" });
+        }
+      } else {
+        Logger.warn("Game not found:", gameId);
+        res.status(404).json({ message: "Game not found" });
+      }
     });
   }
 

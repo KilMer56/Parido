@@ -3,10 +3,16 @@ export type GameAction = {
   payload?: unknown;
 };
 
-export const createGame = () => ({ type: "create" as const });
-export const joinGame = (gameId: string) => ({
+export const createGame = (username: string) => ({
+  type: "create" as const,
+  payload: { username: username },
+});
+export const joinGame = (gameId: string, username: string) => ({
   type: "join" as const,
-  payload: gameId,
+  payload: {
+    gameId: gameId,
+    username: username,
+  },
 });
 export const startGame = () => ({ type: "start" as const });
 export const leaveGame = () => ({ type: "leave" as const });
