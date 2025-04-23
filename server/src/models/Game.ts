@@ -99,6 +99,10 @@ export class Game {
     return this.players.find((player) => player.getSocketId() === socketId);
   }
 
+  public getPlayerByName(username: string): Player | undefined {
+    return this.players.find((player) => player.getName() === username);
+  }
+
   public getMaxPlayers(): number {
     return this.maxPlayers;
   }

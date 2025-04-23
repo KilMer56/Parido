@@ -65,6 +65,10 @@ export class Player {
     return this.socketId;
   }
 
+  public setSocketId(socketId: string) {
+    this.socketId = socketId;
+  }
+
   public removeDice() {
     if (this.diceCount > 0) {
       this.diceCount--;

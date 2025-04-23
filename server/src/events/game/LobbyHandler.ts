@@ -27,6 +27,7 @@ class LobbyHandler extends BaseEventHandler {
               id: player.getId(),
               name: player.getName(),
               socketId: player.getSocketId(),
+              active: player.isActive(),
             })),
             maxPlayers: game.getMaxPlayers(),
           });
@@ -54,6 +55,7 @@ class LobbyHandler extends BaseEventHandler {
                 id: player.getId(),
                 name: player.getName(),
                 socketId: player.getSocketId(),
+                active: player.isActive(),
               })),
               maxPlayers: game.getMaxPlayers(),
             };
@@ -96,6 +98,7 @@ class LobbyHandler extends BaseEventHandler {
                   id: player.getId(),
                   name: player.getName(),
                   socketId: player.getSocketId(),
+                  active: player.isActive(),
                 })),
               };
 
@@ -116,24 +119,17 @@ class LobbyHandler extends BaseEventHandler {
         if (game) {
           const player = game.getPlayerBySocketId(socket.id);
           if (player) {
-            game.removePlayer(player);
+            player.setActive(false); // Mark the player as inactive
 
-            if (game.getPlayers().length === 0) {
-              gameManager.removeGame(game.getId());
-            } else {
-              const playerLeftData = {
-                gameId: game.getId(),
-                players: game.getPlayers().map((player) => ({
-                  id: player.getId(),
-                  name: player.getName(),
-                  socketId: player.getSocketId(),
-                })),
-              };
+            const playerDisconnectedData = {
+              gameId: game.getId(),
+              playerId: player.getId(),
+            };
 
-              socket
-                .to(game.getId())
-                .emit("playerDisconnected", playerLeftData);
-            }
+            socket
+              .to(game.getId())
+              .emit("playerDisconnected", playerDisconnectedData);
+            Logger.info("Player marked as disconnected:", player.getId());
           }
         }
       },
@@ -145,28 +141,32 @@ class LobbyHandler extends BaseEventHandler {
 
         const game = gameManager.getGame(data.gameId);
         if (game) {
-          const player =
-            game.getPlayerBySocketId(socket.id) ||
-            new Player(socket.id, data.username);
-          if (!game.getPlayerBySocketId(socket.id)) {
-            game.addPlayer(player);
+          const player = game.getPlayerByName(data.username);
+          if (player) {
+            player.setActive(true);
+            player.setSocketId(socket.id);
+
+            socket.join(game.getId());
+
+            const reconnectData = {
+              gameId: game.getId(),
+              players: game.getPlayers().map((player) => ({
+                id: player.getId(),
+                name: player.getName(),
+                socketId: player.getSocketId(),
+                active: player.isActive(),
+              })),
+              maxPlayers: game.getMaxPlayers(),
+            };
+
+            socket.emit("playerReconnected", reconnectData);
+            socket.to(game.getId()).emit("playerReconnected", reconnectData);
+
+            Logger.info("User reconnected to game:", data.gameId);
+          } else {
+            emitError(socket, new Error("Player not found"));
+            Logger.error("Player not found for reconnection:", data);
           }
-
-          socket.join(game.getId());
-
-          const reconnectData = {
-            gameId: game.getId(),
-            players: game.getPlayers().map((player) => ({
-              id: player.getId(),
-              name: player.getName(),
-              socketId: player.getSocketId(),
-            })),
-          };
-
-          socket.emit("playerReconnected", reconnectData);
-          socket.to(game.getId()).emit("playerReconnected", reconnectData);
-
-          Logger.info("User reconnected to game:", data.gameId);
         } else {
           Logger.warn("Game not found for reconnection:", data.gameId);
           emitError(socket, new Error("Game not found"));

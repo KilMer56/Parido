@@ -2,6 +2,7 @@ export interface Player {
   id: string;
   name: string;
   socketId: string;
+  active: boolean;
   diceCount?: number;
 }
 
@@ -28,6 +29,7 @@ export interface GameState {
   maxPlayers: number;
   players: Player[];
   currentRound?: Round;
+  playerId?: string;
   playerSocketId?: string;
   logs?: unknown;
   winnerSocketId?: string;
@@ -96,7 +98,7 @@ export class Game {
   }
 
   public getPlayers(): Player[] {
-    return this.state.players;
+    return this.state.players.filter((player) => player.active === true);
   }
 
   public getPlayerById(playerId: string): Player | undefined {
@@ -109,6 +111,14 @@ export class Game {
 
   public getCurrentRound(): Round | null {
     return this.state.currentRound || null;
+  }
+
+  public setPlayerId(playerId: string): void {
+    this.setState({ playerId });
+  }
+
+  public getPlayerId(): string | null {
+    return this.state.playerId || null;
   }
 
   public setPlayerSocketId(socketId: string): void {

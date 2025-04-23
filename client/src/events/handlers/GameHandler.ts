@@ -75,7 +75,7 @@ export class GameHandler {
           this.game.setPlayers(game.players);
 
           if (this.navigate) {
-            this.navigate("/game/" + game.gameId);
+            this.navigate("/" + game.gameId);
           }
         },
       },
@@ -113,12 +113,16 @@ export class GameHandler {
         name: "playerDisconnected",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
-            playerId: number;
-            players: Player[];
+            playerId: string;
           };
           Logger.info("Player disconnected:", data);
-          this.showNotification("A player disconnected", "error");
-          this.game.setPlayers(data.players);
+          this.showNotification("A player disconnected", "info");
+
+          const player = this.game.getPlayerById(data.playerId);
+          if (player) {
+            player.active = false;
+            this.game.setPlayers([...this.game.getPlayers()]);
+          }
         },
       },
       // Player reconnected
@@ -126,11 +130,25 @@ export class GameHandler {
         name: "playerReconnected",
         handler: (_socket: Socket, ...args: unknown[]) => {
           const data = args[0] as {
-            playerId: number;
+            gameId: string;
             players: Player[];
+            maxPlayers: number;
           };
           Logger.info("Player reconnected:", data);
+          const reconnectedPlayer = data.players.find(
+            (player) => player.socketId === this.socketManager.getSocket().id
+          );
+
+          if (reconnectedPlayer) {
+            this.game.setPlayerSocketId(reconnectedPlayer.socketId);
+            this.game.setPlayers(data.players);
+            this.game.setGameId(data.gameId);
+            this.game.setMaxPlayers(data.maxPlayers);
+          } else {
+            Logger.error("Reconnected player not found in players list");
+          }
           this.showNotification("A player reconnected", "success");
+
           this.game.setPlayers(data.players);
         },
       },
