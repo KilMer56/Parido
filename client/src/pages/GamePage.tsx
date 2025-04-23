@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useGame } from "../contexts/GameContext";
 import { leaveGame } from "../types/actions";
 import { GameBoard } from "../components/GameBoard";
@@ -9,13 +8,7 @@ import { GameLobby } from "../components/GameLobby";
 
 function GameContent() {
   const { state: gameState, dispatch } = useGame();
-  const { gameId: urlGameId } = useParams();
   const navigate = useNavigate();
-
-  // Handle initial URL state
-  useEffect(() => {
-    //
-  }, [urlGameId, gameState.gameId, dispatch]);
 
   const handleLeaveGame = () => {
     // Todo: Fix join when leaving

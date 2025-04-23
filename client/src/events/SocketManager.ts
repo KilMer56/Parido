@@ -48,6 +48,17 @@ export class SocketManager {
       Logger.info("Socket was already connected on initialization");
       this.isConnected = true;
     }
+
+    const storedGameId = localStorage.getItem("gameId");
+    const storedUsername = localStorage.getItem("username");
+
+    if (storedGameId && storedUsername) {
+      Logger.info("Reconnecting to game:", storedGameId);
+      this.socket.emit("reconnectToGame", {
+        gameId: storedGameId,
+        username: storedUsername,
+      });
+    }
   }
 
   public static getInstance(): SocketManager {

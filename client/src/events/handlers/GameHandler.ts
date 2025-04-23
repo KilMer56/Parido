@@ -108,6 +108,32 @@ export class GameHandler {
           this.game.setPlayers(data.players);
         },
       },
+      // Player disconnected
+      {
+        name: "playerDisconnected",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            playerId: number;
+            players: Player[];
+          };
+          Logger.info("Player disconnected:", data);
+          this.showNotification("A player disconnected", "error");
+          this.game.setPlayers(data.players);
+        },
+      },
+      // Player reconnected
+      {
+        name: "playerReconnected",
+        handler: (_socket: Socket, ...args: unknown[]) => {
+          const data = args[0] as {
+            playerId: number;
+            players: Player[];
+          };
+          Logger.info("Player reconnected:", data);
+          this.showNotification("A player reconnected", "success");
+          this.game.setPlayers(data.players);
+        },
+      },
       // Game started
       {
         name: "gameStarted",
@@ -159,6 +185,7 @@ export class GameHandler {
           }
         },
       },
+      // Bid got challenged
       {
         name: "bidChallenged",
         handler: (socket: Socket, ...args: unknown[]) => {

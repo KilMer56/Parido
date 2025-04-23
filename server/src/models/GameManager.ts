@@ -25,6 +25,17 @@ class GameManager {
     return this.gamesByGameId.get(gameId);
   }
 
+  public getGameBySocketId(socketId: string): Game | undefined {
+    for (const game of this.gamesByGameId.values()) {
+      if (
+        game.getPlayers().some((player) => player.getSocketId() === socketId)
+      ) {
+        return game;
+      }
+    }
+    return undefined;
+  }
+
   public removeGame(gameId: string): void {
     this.gamesByGameId.delete(gameId);
   }
