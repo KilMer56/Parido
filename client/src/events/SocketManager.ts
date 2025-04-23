@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import Logger from "../utils/logger";
 import { NotificationContextType } from "../contexts/NotificationContext";
 import { SOCKET_URL } from "../constants";
+import axios from "axios";
 
 export interface SocketEvent {
   name: string;
@@ -15,6 +16,7 @@ export class SocketManager {
   private isConnected: boolean = false;
   private pendingEvents: SocketEvent[] = [];
   private notificationContext: NotificationContextType | null = null;
+  private navigate: ((path: string) => void) | null = null;
 
   private constructor() {
     Logger.info("Initializing SocketManager with URL:", SOCKET_URL);
@@ -67,8 +69,13 @@ export class SocketManager {
     }
     return SocketManager.instance;
   }
+
   public setNotificationContext(context: NotificationContextType): void {
     this.notificationContext = context;
+  }
+
+  public setNavigate(navigate: (path: string) => void): void {
+    this.navigate = navigate;
   }
 
   private showNotification(
@@ -94,6 +101,58 @@ export class SocketManager {
             Logger.info("Registering pending events after connection");
             this.registerEvents(this.pendingEvents);
             this.pendingEvents = [];
+          }
+
+          // Check if the user has a gameId and username stored in local storage
+          const storedGameId = localStorage.getItem("gameId");
+          const storedUsername = localStorage.getItem("username");
+
+          if (storedGameId && storedUsername) {
+            Logger.info("Stored gameId and username found in local storage");
+            // Check if the game exists
+            axios
+              .get(`${SOCKET_URL}/game/${storedGameId}`)
+              .then((response) => {
+                if (response.status === 200) {
+                  Logger.info(
+                    "Game exists, redirecting to game page:",
+                    storedGameId
+                  );
+
+                  Logger.info("Reconnecting to game:", storedGameId);
+                  this.socket.emit("reconnectToGame", {
+                    gameId: storedGameId,
+                    username: storedUsername,
+                  });
+                }
+              })
+              .catch((error) => {
+                if (
+                  axios.isAxiosError(error) &&
+                  error.response?.status === 404
+                ) {
+                  Logger.error(
+                    "Game not found (404), clearing local storage:",
+                    error
+                  );
+                } else {
+                  Logger.error("Error checking game existence:", error);
+                }
+
+                // Clear local storage if the game is not found
+                localStorage.removeItem("gameId");
+                localStorage.removeItem("username");
+
+                this.showNotification(
+                  "Game not found. Please create or join a new game.",
+                  "error"
+                );
+
+                // Redirect to home page
+                if (this.navigate) {
+                  this.navigate("/");
+                }
+              });
           }
         },
       },
