@@ -13,10 +13,13 @@ export class SocketManager {
   private static instance: SocketManager;
   private socket: Socket;
   private registeredEvents: Map<string, SocketEvent[]> = new Map();
-  private isConnected: boolean = false;
   private pendingEvents: SocketEvent[] = [];
   private notificationContext: NotificationContextType | null = null;
   private navigate: ((path: string) => void) | null = null;
+
+  public isConnected: boolean = false;
+  public isLoading: boolean = true;
+  public isReconnecting: boolean = false;
 
   private constructor() {
     Logger.info("Initializing SocketManager with URL:", SOCKET_URL);
@@ -95,7 +98,9 @@ export class SocketManager {
           Logger.info("Connected to server:", socket.id);
           Logger.info("Transport:", socket.io.engine.transport.name);
           this.isConnected = true;
+          this.isLoading = false;
           this.showNotification("Connected to server", "success");
+
           // Register any pending events when connection is established
           if (this.pendingEvents.length > 0) {
             Logger.info("Registering pending events after connection");
@@ -108,6 +113,9 @@ export class SocketManager {
           const storedUsername = localStorage.getItem("username");
 
           if (storedGameId && storedUsername) {
+            this.isReconnecting = true;
+
+            this.showNotification("Reconnecting to game...", "info");
             Logger.info("Stored gameId and username found in local storage");
             // Check if the game exists
             axios
@@ -143,8 +151,10 @@ export class SocketManager {
                 localStorage.removeItem("gameId");
                 localStorage.removeItem("username");
 
+                this.isReconnecting = false;
+
                 this.showNotification(
-                  "Game not found. Please create or join a new game.",
+                  "Game not found or not joinable. Please create or join a new game.",
                   "error"
                 );
 

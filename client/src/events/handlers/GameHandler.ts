@@ -140,6 +140,9 @@ export class GameHandler {
           );
 
           if (reconnectedPlayer) {
+            if (this.socketManager.isReconnecting) {
+              this.socketManager.isReconnecting = false;
+            }
             this.game.setPlayerSocketId(reconnectedPlayer.socketId);
             this.game.setPlayers(data.players);
             this.game.setGameId(data.gameId);

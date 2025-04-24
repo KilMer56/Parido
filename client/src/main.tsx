@@ -12,14 +12,21 @@ import { GameProvider } from "./contexts/GameContext";
 
 export function App() {
   const notificationContext = useNotification();
+  const socketManager = SocketManager.getInstance();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const socketManager = SocketManager.getInstance();
     socketManager.setNotificationContext(notificationContext);
     socketManager.setNavigate(navigate);
-  }, [notificationContext, navigate]);
+  }, [notificationContext, navigate, socketManager]);
+
+  if (socketManager.isLoading) {
+    return <div className="loading-text">Connecting to server...</div>;
+  }
+  if (socketManager.isReconnecting) {
+    return <div className="loading-text">Reconnecting to game...</div>;
+  }
 
   return (
     <>
